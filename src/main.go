@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+    "ktimer"
 )
 
 func substr(s string, pos, length int) string {
@@ -42,4 +43,11 @@ func main() {
 	str2 = getParentDirectory(str1)
 	fmt.Println(str1, str2)
 
+    fmt.Println(ktimer.DEFAULT_CONF)
+    f := ktimer.GetConfFilePath()
+    ck := ktimer.CheckConfFile()
+    log.Println("adfadf", ck)
+    cj,err := ktimer.CreateConfFile()
+    ck = ktimer.CheckConfFile()
+    fmt.Println(f, cj,err,ck)
 }
