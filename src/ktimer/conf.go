@@ -63,8 +63,10 @@ func CreateConfFile() (bool,error) {
     res := false
     confFile := GetConfFilePath()
     fout,err := os.Create(confFile)
+    defer fout.Close()
     if(err ==nil) {
         fout.WriteString(DEFAULT_CONF)
     }
+
     return res,err
 }

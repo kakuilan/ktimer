@@ -1,0 +1,140 @@
+参考项目
+https://github.com/OutThisLife/GoTimer
+https://github.com/zhangwei1234/go-timer-wheel
+https://github.com/lxmgo/config
+https://github.com/astaxie/beego/tree/master/config
+https://github.com/go-redis/redis
+参考文章
+https://my.oschina.net/u/943306/blog/149395
+https://dave.cheney.net/2013/10/15/how-does-the-go-build-command-work
+http://www.cnblogs.com/zhangym/p/6201603.html
+http://www.cnblogs.com/sevenyuan/archive/2013/02/28/2937275.html
+http://dmdgeeker.com/goBook/docs/ch07/file.html
+
+开始
+git clone https://github.com/kakuilan/ktimer.git
+cd ktimer
+git config user.name "kakuilan"
+git config user.email kakuilan@163.com
+git config credential.helper store
+
+设置GOPATH
+echo "GOPATH=/root/gopro:/root/ktimer" >> ~/.zshrc
+echo "export GOPATH" >> ~/.zshrc
+echo "PATH=\$PATH:\$GOPATH/bin" >> ~/.zshrc
+source ~/.zshrc
+
+
+源码结构
+src:
+    config
+    ktimer
+    cli
+    log
+    web
+
+    程序目录:
+        runtime
+        log
+
+
+        redis持久化:
+            all-timer 所有的定时器任务,哈希表
+            second-timer 0~59个秒数的定时器集合,有序集合
+
+            配置
+
+
+            编译go install 
+            http://wiki.jikexueyuan.com/project/go-command-tutorial/0.2.html
+            http://golangtc.com/t/555dc228b09ecc126600001b
+            http://blog.csdn.net/Alsmile/article/details/48290223
+            在环境变量GOPATH中包含多个工作区目录路径时，我们需要在编译命令源码文件前先对环境变量GOBIN进行设置
+            export GOBIN=/root/ktimer/bin
+            cd /root/ktimer/src
+            go install main.go
+
+            ------------------------------
+            conf.ini
+
+            [default]
+            #pid文件
+            pidfile = /var/run/ktimer.pid
+            #最大任务数量
+            task_max_num = 100000
+            #任务分隔符,形如 类型@时间@任务@次数限制
+            #例如定时器(定时器无次数限制,仅一次) timer@30@echo -e Hello Ktimer
+            #例如断续器(次数限制为0时即不限制) ticker@10@date --rfc-3339=ns@0
+            task_separator = @
+            #所有任务池缓存key
+            task_pool_key = ktimer:tasks:all
+            #待运转任务缓存key
+            task_trun_key = ktimer:tasks:second
+
+            [web]
+            #是否启用web
+            web_enable = 1
+            #web端口
+            web_port = 9558
+            #web监听IP
+            web_bind_ip = 127.0.0.1
+            #web访问密码
+            web_passwd = 123456
+
+            [redis]
+            redis.host = 127.0.0.1
+            redis.port = 6379
+            ;redis.passwd = 
+
+            #默认任务
+            [task]
+            default_timer = timer@1@echo -e Hello Ktimer
+            default_ticker = ticker@1@date --rfc-3339=ns@0
+
+            #日志
+            [log]
+            log.dir = log
+            log.error_open = 1
+            log.error_file = error.log
+            log.runed_open = 1
+            log.runed_file = runed.log
+
+            ------------------------------
+            程序命令列表
+            首次运行时进行初始化检查
+            ktimer init
+            启动
+            ktimer start
+            停止
+            ktimer stop
+            重启
+            ktimer restart
+            加入定时任务
+            ktimer add "ticker@1@date --rfc-3339=ns@0"
+            获取任务信息
+            ktimer get 912ec803b2ce49e4a541068d495ab570
+            删除定时任务
+            ktimer del 912ec803b2ce49e4a541068d495ab570
+            统计定时任务总数
+            ktimer count
+            显示所有定时任务
+            ktimer list
+            清空删除所有任务
+            ktimer clear
+            显示程序信息(作者、版本、运行状态、配置)
+            ktimer info
+            当前程序状态
+            ktimer/ktimer status
+
+
+
+
+
+
+
+
+
+
+
+
+
