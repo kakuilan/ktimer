@@ -1,7 +1,7 @@
 package ktimer
 
 import (
-	"fmt"
+//	"fmt"
 )
 
 func CheckRedis() {

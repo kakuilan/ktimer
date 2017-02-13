@@ -3,6 +3,6 @@ import (
     "fmt"
 )
 
-func main() {
+func main0() {
     fmt.Println("aaa")
 }

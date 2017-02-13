@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 )
 
 //字符串截取
@@ -37,13 +38,11 @@ func FileExist(filename string) bool {
 	return err == nil || os.IsExist(err)
 }
 
-func Writeable(path string) bool {
+func Writeable(file string) bool {
 	err := syscall.Access(file, syscall.O_RDWR)
 	if err != nil {
-		fmt.Println(err.Error())
-        return false
+		return false
 	} else {
-		fmt.Println("access ok")
-        return true
+		return true
 	}
 }
