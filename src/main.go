@@ -36,18 +36,8 @@ func getCurrentDirectory() string {
 }
 
 func main() {
+    log.Println("ktimer main")
+    confile := GetConfFilePath()
+    fmt.Println(confile)
 
-	var str1, str2 string
-	str1 = getCurrentDirectory()
-
-	str2 = getParentDirectory(str1)
-	fmt.Println(str1, str2)
-
-    fmt.Println(ktimer.DEFAULT_CONF)
-    f := ktimer.GetConfFilePath()
-    ck := ktimer.CheckConfFile()
-    log.Println("adfadf", ck)
-    cj,err := ktimer.CreateConfFile()
-    ck = ktimer.CheckConfFile()
-    fmt.Println(f, cj,err,ck)
 }

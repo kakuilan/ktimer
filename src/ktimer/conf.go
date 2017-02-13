@@ -70,3 +70,4 @@ func CreateConfFile() (bool,error) {
 
     return res,err
 }
+
