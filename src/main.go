@@ -1,18 +1,15 @@
 package main
-
 import (
-	"fmt"
-	"log"
-	"os"
-	"path/filepath"
-	"strings"
-    "ktimer"
+    . "ktimer"
+    "fmt"
 )
 
-
 func main() {
-    log.Println("ktimer main")
-    confile := GetConfFilePath()
-    fmt.Println(confile)
+    //配置文件
+    cnf := GetConfFilePath()
+    fmt.Println(cnf)
+
+    //初始化
+    Init()
 
 }

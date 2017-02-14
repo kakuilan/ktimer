@@ -5,6 +5,7 @@ import (
     "os"
 )
 
+//默认配置
 const DEFAULT_CONF = `
 [default]
 #pid文件
@@ -33,6 +34,7 @@ web_passwd = 123456
 [redis]
 redis.host = 127.0.0.1
 redis.port = 6379
+redis.db = 0
 ;redis.passwd = 
 
 #默认任务
@@ -49,16 +51,19 @@ log.runed_open = 1
 log.runed_file = runed.log
 `
 
+//获取配置文件路径
 func GetConfFilePath() string {
     return GetCurrentDirectory() + "/conf.ini"
 }
 
+//检查配置文件是否存在
 func CheckConfFile() bool {
     confFile := GetConfFilePath()
     res := FileExist(confFile)
     return res
 }
 
+//创建配置文件
 func CreateConfFile() (bool,error) {
     res := false
     confFile := GetConfFilePath()
