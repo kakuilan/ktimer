@@ -84,6 +84,7 @@ src:
             [redis]
             redis.host = 127.0.0.1
             redis.port = 6379
+            redis.db = 0
             ;redis.passwd = 
 
             #默认任务
@@ -124,11 +125,22 @@ src:
             显示程序信息(作者、版本、运行状态、配置)
             ktimer info
             当前程序状态
-            ktimer/ktimer status
+            ktimer status
+            查看版本号
+            ktimer version
+            ktimer/ktimer help
 
 
+            流程:
+                Init()
+                1. 检查是否有配置文件
+                2. 检查redis是否连接
+                3. 检查日志目录是否可写
+                4. 检查pid
 
 
+                go get github.com/astaxie/beego/config
+                go get gopkg.in/redis.v5
 
 
 
