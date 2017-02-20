@@ -6,10 +6,9 @@ import (
 
 func main() {
     //配置文件
-    cnf := GetConfFilePath()
-    fmt.Println(cnf)
+    file := GetConfFilePath()
+    fmt.Println(file)
 
     //初始化
     Init()
-
 }

@@ -3,6 +3,7 @@ import (
     //"github.com/astaxie/beego/config"
     //"fmt"
     "os"
+    "config"
 )
 
 //默认配置
@@ -51,6 +52,9 @@ log.runed_open = 1
 log.runed_file = runed.log
 `
 
+//全局配置对象
+var CnfObj config.ConfigInterface
+
 //获取配置文件路径
 func GetConfFilePath() string {
     return GetCurrentDirectory() + "/conf.ini"
@@ -76,3 +80,11 @@ func CreateConfFile() (bool,error) {
     return res,err
 }
 
+//获取配置对象
+func GetConfObj() (config.ConfigInterface,error) {
+    var err error
+    file := GetConfFilePath()
+    CnfObj,err = config.NewConfig(file)
+    
+    return CnfObj,err
+}

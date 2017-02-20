@@ -3,7 +3,7 @@ package ktimer
 import (
 	"fmt"
     //"github.com/astaxie/beego/config"
-    "config"
+    //"config"
     "gopkg.in/redis.v5"
     "errors"
     "os"
@@ -12,14 +12,15 @@ import (
 //获取redis连接
 func GetRedisClient() (*redis.Client,error) {
     var client *redis.Client
-    file := GetConfFilePath()
-    cnf,err := config.NewConfig(file)
+    var err error
+    CnfObj,err = GetConfObj()
+
     if(err ==nil ) {
       var addr string
-      host := cnf.String("redis::redis.host")
-      port := cnf.String("redis::redis.port")
-      pawd := cnf.String("redis::redis.passwd")
-      db,err2 := cnf.Int("redis::redis.db")
+      host := CnfObj.String("redis::redis.host")
+      port := CnfObj.String("redis::redis.port")
+      pawd := CnfObj.String("redis::redis.passwd")
+      db,err2 := CnfObj.Int("redis::redis.db")
       addr = host + ":" + port
       fmt.Println(host,port,addr,pawd,db,err2, "redis conf")
       if(err2!=nil) {
@@ -59,6 +60,11 @@ func CheckRedis() (bool,error){
     }
 
     return true,err
+}
+
+func CheckLogdir() {
+    
+
 }
 
 
