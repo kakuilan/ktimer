@@ -7,6 +7,7 @@ import (
     "gopkg.in/redis.v5"
     "errors"
     "os"
+    "strings"
 )
 
 //获取redis连接
@@ -62,9 +63,25 @@ func CheckRedis() (bool,error){
     return true,err
 }
 
-func CheckLogdir() {
-    
+func CheckLogdir() (bool,error) {
+    var err error
+    CnfObj,err = GetConfObj()
+    if(err !=nil ){
+        return  false,err
+    }
 
+    logdir := CnfObj.String("log::log.dir")
+    pos := strings.Index(logdir, "/")
+    if(pos==-1) { //相对当前目录
+        currdir := GetCurrentDirectory()
+        logdir = currdir + "/" + logdir
+    }
+
+    write := Writeable(logdir)
+
+    fmt.Println(logdir, pos, write)
+
+    return true,err
 }
 
 
@@ -85,6 +102,10 @@ func Init() {
         fmt.Println("redis connet has error:",  redisChk, err) 
         os.Exit(0)
     }
+
+    //检查日志目录
+    logChk,err2 := CheckLogdir()
+    fmt.Println(logChk,err2)
 
 }
 
