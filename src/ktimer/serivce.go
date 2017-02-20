@@ -6,6 +6,7 @@ import (
     "config"
     "gopkg.in/redis.v5"
     "errors"
+    "os"
 )
 
 //获取redis连接
@@ -73,7 +74,11 @@ func Init() {
     }
 
     //检查redis
-    CheckRedis()
+    redisChk,err := CheckRedis()
+    if(err!=nil){
+        fmt.Println("redis connet has error:",  redisChk, err) 
+        os.Exit(0)
+    }
 
 }
 
