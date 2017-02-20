@@ -5,9 +5,10 @@ import (
     //"github.com/astaxie/beego/config"
     "config"
     "gopkg.in/redis.v5"
+    "errors"
 )
 
-//
+//获取redis连接
 func GetRedisClient() (*redis.Client,error) {
     var client *redis.Client
     file := GetConfFilePath()
@@ -20,16 +21,17 @@ func GetRedisClient() (*redis.Client,error) {
       db,err2 := cnf.Int("redis::redis.db")
       addr = host + ":" + port
       fmt.Println(host,port,addr,pawd,db,err2, "redis conf")
-      
+      if(err2!=nil) {
+          return client,err2
+      }
+
       client = redis.NewClient(&redis.Options{
           Addr: addr ,
           Password : pawd,
           DB: db,
       })
 
-      fmt.Println(client)
       return  client,err2
-    }else{
     }
 
     return client,err
@@ -37,8 +39,23 @@ func GetRedisClient() (*redis.Client,error) {
 
 //检查redis是否连接
 func CheckRedis() (bool,error){
-    client,err := GetRedisClient()
-    fmt.Println(client)
+    var client *redis.Client
+    var err error
+    var pong string
+    var res bool = false
+    
+    client,err = GetRedisClient()
+    if(err !=nil ) {
+        return  res,err
+    }
+
+    pong,err = client.Ping().Result()
+    if(err !=nil ) {
+        return res,err
+    }else if(pong!="PONG") {
+        err = errors.New("reids ping result not eq `PONG`")
+        return res,err
+    }
 
     return true,err
 }
