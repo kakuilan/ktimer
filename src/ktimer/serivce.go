@@ -171,35 +171,10 @@ func Restart(){
     
 }
 
-func Add(){
-    
-}
-
-func Get(){
-    
-}
-
-func Del(){
-    
-}
-
-func Count(){
-    
-}
-
-func List(){
-    
-}
-
-func Clear() {
-    
-}
-
-func Info() {
-    
-}
-
 func Status() {
     
 }
+
+
+
 

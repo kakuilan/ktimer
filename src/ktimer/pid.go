@@ -22,7 +22,7 @@ func PidGetVue(pidfile string) (int,error) {
     return int(pid),nil
 }
 
-
+//检查pid进程是否存在
 func PidIsActive(pid int) (bool,error) {
     if pid<=0 {
         return false,errors.New("ktimer process id error")
@@ -39,7 +39,7 @@ func PidIsActive(pid int) (bool,error) {
     return true,nil
 }
 
-
+//创建pid文件
 func PidCreate(pidfile string) (int,error) {
     if _,err := os.Stat(pidfile);!os.IsNotExist(err) {
         if pid,_ :=  PidGetVue(pidfile);pid>0 {
