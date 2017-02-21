@@ -76,7 +76,7 @@ func CheckLogdir() (bool,error) {
     pos := strings.Index(logdir, "/")
     if(pos==-1) { //相对当前目录
         currdir := GetCurrentDirectory()
-        logdir = currdir + "/" + logdir
+        logdir = currdir + "/" + strings.TrimRight(logdir, "/")
     }
 
     direxis := FileExist(logdir)
