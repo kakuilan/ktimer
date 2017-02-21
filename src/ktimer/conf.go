@@ -83,8 +83,11 @@ func CreateConfFile() (bool,error) {
 //获取配置对象
 func GetConfObj() (config.ConfigInterface,error) {
     var err error
-    file := GetConfFilePath()
-    CnfObj,err = config.NewConfig(file)
-    
+    if(CnfObj==nil) {
+        file := GetConfFilePath()
+        CnfObj,err = config.NewConfig(file)
+    }
+
+    //println("in GetConfObj", CnfObj)    
     return CnfObj,err
 }

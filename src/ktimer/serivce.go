@@ -63,6 +63,7 @@ func CheckRedis() (bool,error){
     return true,err
 }
 
+//检查日志目录
 func CheckLogdir() (bool,error) {
     var err error
     CnfObj,err = GetConfObj()
@@ -71,41 +72,68 @@ func CheckLogdir() (bool,error) {
     }
 
     logdir := CnfObj.String("log::log.dir")
+    logdir = strings.Replace(logdir, "\\", "/", -1)
     pos := strings.Index(logdir, "/")
     if(pos==-1) { //相对当前目录
         currdir := GetCurrentDirectory()
         logdir = currdir + "/" + logdir
     }
 
-    write := Writeable(logdir)
-
-    fmt.Println(logdir, pos, write)
+    direxis := FileExist(logdir)
+    if(!direxis) {
+        err = os.MkdirAll(logdir, 0766)
+        if (err !=nil) {
+            return false ,err
+        }
+    }else{
+        write := Writeable(logdir)
+        err = os.Chmod(logdir, 0766)
+        if(!write || err!=nil) {
+            err = errors.New("logdir canot write")  
+            return false, err
+        }
+    }
 
     return true,err
 }
 
+//检查pid文件
+func CheckPid() (bool,error) {
+    var err error
+    var chk bool = false
 
-func CheckPid() {
+    return chk,err
 }
 
 //初始化
 func Init() {
+    var err error
+    var chk bool
+   
+    fmt.Println("CnfObj", CnfObj)
+
     //检查配置文件
-    confCheck := CheckConfFile()
-    if(!confCheck) {
+    chk = CheckConfFile()
+    if(!chk) {
         CreateConfFile()
     }
 
     //检查redis
-    redisChk,err := CheckRedis()
+    chk,err = CheckRedis()
     if(err!=nil){
-        fmt.Println("redis connet has error:",  redisChk, err) 
+        fmt.Println("redis connet has error:", err) 
         os.Exit(0)
     }
 
     //检查日志目录
-    logChk,err2 := CheckLogdir()
-    fmt.Println(logChk,err2)
+    chk,err = CheckLogdir()
+    if(err !=nil) {
+        fmt.Println("check log`s dir has error:", err)
+    }
+
+    //检查pid
+    chk,err = CheckPid()
+
 
 }
 
