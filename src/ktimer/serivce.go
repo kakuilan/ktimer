@@ -101,11 +101,31 @@ func CheckLogdir() (bool,error) {
 func CheckPid() (bool,error) {
     var err error
     var chk bool = false
+    CnfObj,err = GetConfObj()
 
+    pid := CnfObj.String("pidfile")
+    if(pid=="") {
+        err = errors.New("pid path is empty")
+        return chk,err
+    }
+    pid = strings.Replace(pid, "\\", "/", -1)
+    pos := strings.Index(pid, "/") 
+    if(pos==-1) {
+        currdir := GetCurrentDirectory()
+        pid = currdir + "/" +  strings.TrimRight(pid, "/")
+    }
+    
+    if(!FileExist(pid)) {
+        _,err = PidCreate(pid)
+        if err!=nil {
+            return chk,err
+        }
+    }
+    
     return chk,err
 }
 
-//初始化
+//初始化(第一次执行时)
 func Init() {
     var err error
     var chk bool
@@ -133,7 +153,9 @@ func Init() {
 
     //检查pid
     chk,err = CheckPid()
-
+    if(err !=nil) {
+        fmt.Println("check pid has error:", err)
+    }
 
 }
 
