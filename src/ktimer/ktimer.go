@@ -1,4 +1,4 @@
-package main
+package ktimer
 import (
 
 )
@@ -32,7 +32,6 @@ func ClearTimer() {
     
 }
 
-:wq
 
 
 
