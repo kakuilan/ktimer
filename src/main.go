@@ -10,9 +10,12 @@ func main() {
     argNum := len(os.Args)
     fmt.Println(argNum)
     fmt.Println(os.Args)
-   
+ 
+    //无参数直接显示使用方式
     if(argNum==1) {
         Help()
+    }else{
+        CatchCli()
     }
 
 

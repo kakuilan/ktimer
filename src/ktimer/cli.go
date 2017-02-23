@@ -1,8 +1,11 @@
 package ktimer
 import (
-    "fmt"    
+    "fmt"
+    "os"
+    "flag"
 )
 
+//打印帮助信息
 func Help() {
     fmt.Println("Ktimer is a simple timer/ticker manager by golang.")
     fmt.Println("Version ", VERSION)
@@ -41,4 +44,14 @@ func Help() {
 
 }
 
+//捕获CLI命令参数
+func CatchCli() {
+    action := os.Args[1]
+    tType := flag.String("type", "timer", "Timer type")
+    tTime := flag.Int("time", 1, "seconds or timestamp")
+    tLimit := flag.Int("limit", 0, "limit number")
+    tCommand := flag.String("command", "", "specific operation")
 
+    fmt.Println("acton=", action, *tType, *tTime, *tLimit, *tCommand)
+
+}
