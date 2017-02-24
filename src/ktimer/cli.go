@@ -50,7 +50,8 @@ func CatchCli() {
     tType := flag.String("type", "timer", "Timer type")
     tTime := flag.Int("time", 1, "seconds or timestamp")
     tLimit := flag.Int("limit", 0, "limit number")
-    tCommand := flag.String("command", "", "specific operation")
+    tCommand := flag.String("command", "asd", "specific operation")
+    flag.Parse()
 
     fmt.Println("acton=", action, *tType, *tTime, *tLimit, *tCommand)
 
