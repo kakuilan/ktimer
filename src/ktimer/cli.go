@@ -47,19 +47,28 @@ func Help() {
 
 //捕获CLI命令参数
 func CatchCli() {
-	action := os.Args[1]
-	tType := flag.String("type", "timer", "Timer type")
-	tTime := flag.Int("time", 1, "seconds or timestamp")
-	tLimit := flag.Int("limit", 0, "limit number")
-	tCommand := flag.String("command", "asd", "specific operation")
-	flag.Parse()
+	//获取命令行参数
+	argNum := len(os.Args)
 
-	fmt.Println("------ Args start ------")
-	for i, v := range flag.Args() {
-		fmt.Printf("arg[%d] = (%s).\n", i, v)
+	//无参数直接显示使用方式
+	if argNum == 1 {
+		Help()
+	} else {
+		action := os.Args[1]
+		tType := flag.String("type", "timer", "Timer type")
+		tTime := flag.Int("time", 1, "seconds or timestamp")
+		tLimit := flag.Int("limit", 0, "limit number")
+		tCommand := flag.String("command", "asd", "specific operation")
+		flag.Parse()
+
+		fmt.Println("------ Args start ------")
+		for i, v := range flag.Args() {
+			fmt.Printf("arg[%d] = (%s).\n", i, v)
+
+		}
+
+		fmt.Println("acton=", action, *tType, *tTime, *tLimit, *tCommand)
 
 	}
-
-	fmt.Println("acton=", action, *tType, *tTime, *tLimit, *tCommand)
 
 }

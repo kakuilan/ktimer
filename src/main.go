@@ -1,23 +1,11 @@
 package main
 import (
     . "ktimer"
-    "fmt"
-    "os"
+    //"fmt"
 )
 
 func main() {
-    //获取命令行参数
-    argNum := len(os.Args)
-    fmt.Println(argNum)
-    fmt.Println(os.Args)
- 
-    //无参数直接显示使用方式
-    if(argNum==1) {
-        Help()
-    }else{
-        CatchCli()
-    }
-
+    CatchCli()
 
     //配置文件
     //file := GetConfFilePath()
