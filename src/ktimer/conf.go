@@ -10,17 +10,15 @@ import (
 const DEFAULT_CONF = `
 [default]
 #pid文件
-pidfile = /var/run/ktimer.pid
+pidfile = ktimer.pid
 #最大任务数量
-task_max_num = 100000
-#任务分隔符,形如 类型@时间@任务@次数限制
-#例如定时器(定时器无次数限制,仅一次) timer@30@echo -e Hello Ktimer
-#例如断续器(次数限制为0时即不限制) ticker@10@date --rfc-3339=ns@0
-task_separator = @
+task_max_num = 500000
 #所有任务池缓存key
 task_pool_key = ktimer:tasks:all
 #待运转任务缓存key
 task_trun_key = ktimer:tasks:second
+#任务过期限制.默认执行60秒内的任务,超过则抛弃;为0则不限制,全部执行
+task_expire_limit = 60
 
 [web]
 #是否启用web
@@ -37,11 +35,6 @@ redis.host = 127.0.0.1
 redis.port = 6379
 redis.db = 0
 ;redis.passwd = 
-
-#默认任务
-[task]
-default_timer = timer@1@echo -e Hello Ktimer
-default_ticker = ticker@1@date --rfc-3339=ns@0
 
 #日志
 [log]

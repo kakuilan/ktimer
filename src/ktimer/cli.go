@@ -4,7 +4,23 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 )
+
+var Commands = []string{
+	"init",
+	"start",
+	"stop",
+	"restart",
+	"status",
+	"version",
+	"help",
+	"count",
+	"clear",
+	"get",
+	"del",
+	"add",
+}
 
 //打印帮助信息
 func Help() {
@@ -55,6 +71,25 @@ func CatchCli() {
 		Help()
 	} else {
 		action := os.Args[1]
+		action = strings.ToLower(action)
+
+		//检查是否存在该命令
+		var isCommand bool = false
+		for _, ac := range Commands {
+			if ac == action {
+				isCommand = true
+				break
+			}
+		}
+		if !isCommand {
+			fmt.Printf("This command [%s] does not exist in ktimer\n", action)
+			os.Exit(0)
+		}
+
+		//解析tag参数
+		tagNum := len(flag.Args())
+		fmt.Println("tagNum:", tagNum)
+
 		tType := flag.String("type", "timer", "Timer type")
 		tTime := flag.Int("time", 1, "seconds or timestamp")
 		tLimit := flag.Int("limit", 0, "limit number")
