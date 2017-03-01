@@ -1,14 +1,14 @@
 package main
+
 import (
-    . "ktimer"
-    //"fmt"
+	. "ktimer"
+	//"fmt"
 )
 
 func main() {
-    CatchCli()
+	CatchCli()
 
-    //初始化
-    Init()
-
+	//初始化
+	Init()
 
 }

@@ -1,7 +1,7 @@
 package ktimer
 
 import (
-	"flag"
+	//"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -58,7 +58,12 @@ func Help() {
 	fmt.Printf("%8s%-10s%-s\n", " ", "", "e.g.")
 	fmt.Printf("%8s%-10s%-s\n", " ", "", "ktimer clear")
 	//fmt.Printf("%8s%-10s%-s\n"," ", "", "")
+	os.Exit(0)
+}
 
+func commandErr(command string) {
+	fmt.Printf("The command error,please see help: [ktimer -help]\n")
+	os.Exit(0)
 }
 
 //捕获CLI命令参数
@@ -72,6 +77,9 @@ func CatchCli() {
 	} else {
 		action := os.Args[1]
 		action = strings.ToLower(action)
+		if action == "help" || action == "-h" || action == "--h" || action == "-help" || action == "--help" {
+			Help()
+		}
 
 		//检查是否存在该命令
 		var isCommand bool = false
@@ -82,27 +90,12 @@ func CatchCli() {
 			}
 		}
 		if !isCommand {
-			fmt.Printf("This command [%s] does not exist in ktimer\n", action)
-			os.Exit(0)
+			commandErr(action)
 		}
 
-		//解析tag参数
-		tagNum := len(flag.Args())
-		fmt.Println("tagNum:", tagNum)
-
-		tType := flag.String("type", "timer", "Timer type")
-		tTime := flag.Int("time", 1, "seconds or timestamp")
-		tLimit := flag.Int("limit", 0, "limit number")
-		tCommand := flag.String("command", "asd", "specific operation")
-		flag.Parse()
-
-		fmt.Println("------ Args start ------")
-		for i, v := range flag.Args() {
-			fmt.Printf("arg[%d] = (%s).\n", i, v)
-
+		for j, arg := range os.Args {
+			fmt.Printf("arg[%d] = %s \n", j, arg)
 		}
-
-		fmt.Println("acton=", action, *tType, *tTime, *tLimit, *tCommand)
 
 	}
 

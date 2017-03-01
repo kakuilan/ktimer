@@ -1,9 +1,10 @@
 package ktimer
+
 import (
-    //"github.com/astaxie/beego/config"
-    //"fmt"
-    "os"
-    "config"
+	//"github.com/astaxie/beego/config"
+	//"fmt"
+	"config"
+	"os"
 )
 
 //默认配置
@@ -50,37 +51,37 @@ var CnfObj config.ConfigInterface
 
 //获取配置文件路径
 func GetConfFilePath() string {
-    return GetCurrentDirectory() + "/conf.ini"
+	return GetCurrentDirectory() + "/conf.ini"
 }
 
 //检查配置文件是否存在
 func CheckConfFile() bool {
-    confFile := GetConfFilePath()
-    res := FileExist(confFile)
-    return res
+	confFile := GetConfFilePath()
+	res := FileExist(confFile)
+	return res
 }
 
 //创建配置文件
-func CreateConfFile() (bool,error) {
-    res := false
-    confFile := GetConfFilePath()
-    fout,err := os.Create(confFile)
-    defer fout.Close()
-    if(err ==nil) {
-        fout.WriteString(DEFAULT_CONF)
-    }
+func CreateConfFile() (bool, error) {
+	res := false
+	confFile := GetConfFilePath()
+	fout, err := os.Create(confFile)
+	defer fout.Close()
+	if err == nil {
+		fout.WriteString(DEFAULT_CONF)
+	}
 
-    return res,err
+	return res, err
 }
 
 //获取配置对象
-func GetConfObj() (config.ConfigInterface,error) {
-    var err error
-    if(CnfObj==nil) {
-        file := GetConfFilePath()
-        CnfObj,err = config.NewConfig(file)
-    }
+func GetConfObj() (config.ConfigInterface, error) {
+	var err error
+	if CnfObj == nil {
+		file := GetConfFilePath()
+		CnfObj, err = config.NewConfig(file)
+	}
 
-    //println("in GetConfObj", CnfObj)    
-    return CnfObj,err
+	//println("in GetConfObj", CnfObj)
+	return CnfObj, err
 }
