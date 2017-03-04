@@ -93,6 +93,21 @@ func CatchCli() {
 			commandErr(action)
 		}
 
+		switch action {
+		case "init":
+			ServiceInit()
+		case "start":
+			ServiceStart()
+		case "stop":
+			ServiceStop()
+		case "restart":
+			ServiceRestart()
+		case "status":
+			ServiceStatus()
+		case "version":
+			ServiceVersion()
+		}
+
 		for j, arg := range os.Args {
 			fmt.Printf("arg[%d] = %s \n", j, arg)
 		}

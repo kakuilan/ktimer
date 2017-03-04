@@ -126,7 +126,7 @@ func CheckPid() (bool, error) {
 }
 
 //初始化(第一次执行时)
-func Init() {
+func ServiceInit() {
 	var err error
 	var chk bool
 
@@ -159,18 +159,23 @@ func Init() {
 
 }
 
-func Start() {
+func ServiceStart() {
 
 }
 
-func Stop() {
+func ServiceStop() {
 
 }
 
-func Restart() {
+func ServiceRestart() {
 
 }
 
-func Status() {
+func ServiceStatus() {
 
 }
+
+func ServiceVersion() {
+
+}
+
