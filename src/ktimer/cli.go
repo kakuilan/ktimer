@@ -8,18 +8,18 @@ import (
 )
 
 var Commands = []string{
-	"init",
-	"start",
-	"stop",
-	"restart",
-	"status",
-	"version",
-	"help",
-	"count",
-	"clear",
-	"get",
-	"del",
-	"add",
+    "help",
+    "version",
+    "init",
+    "status",
+    "start",
+    "stop",
+    "restart",
+    "count",
+    "clear",
+    "get",
+    "del",
+    "add",
 }
 
 //打印帮助信息
