@@ -4,6 +4,8 @@ https://github.com/zhangwei1234/go-timer-wheel
 https://github.com/lxmgo/config
 https://github.com/astaxie/beego/tree/master/config
 https://github.com/go-redis/redis
+https://github.com/zgljl2012/go-cli/blob/master/src/cli/cli.go
+https://github.com/takama/daemon 守护进程
 参考文章
 https://my.oschina.net/u/943306/blog/149395
 https://dave.cheney.net/2013/10/15/how-does-the-go-build-command-work
@@ -12,6 +14,10 @@ http://www.cnblogs.com/sevenyuan/archive/2013/02/28/2937275.html
 http://dmdgeeker.com/goBook/docs/ch07/file.html
 命令行 http://studygolang.com/articles/4682
 格式化输出 http://www.cnblogs.com/golove/p/3284304.html
+flag http://blog.studygolang.com/2013/02/%E6%A0%87%E5%87%86%E5%BA%93-%E5%91%BD%E4%BB%A4%E8%A1%8C%E5%8F%82%E6%95%B0%E8%A7%A3%E6%9E%90flag/
+http://kaiq.me/2016/01/09/go/golang-flag/
+分布式定时器 http://www.cnblogs.com/akwei/p/3170722.html
+
 
 开始
 git clone https://github.com/kakuilan/ktimer.git
@@ -68,6 +74,8 @@ src:
             task_pool_key = ktimer:tasks:all
             #待运转任务缓存key
             task_trun_key = ktimer:tasks:second
+            #分布式锁key
+            task_lcok_key = ktimer:tasks:lock
             #任务过期限制.默认执行60秒内的任务,超过则抛弃;为0则不限制,全部执行
             task_expire_limit = 60
 
@@ -85,9 +93,8 @@ src:
             redis.host = 127.0.0.1
             redis.port = 6379
             redis.db = 0
-            ;redis.passwd = 
+            redis.passwd = 
 
-            #日志
             [log]
             log.dir = log
             log.error_open = 1
@@ -97,32 +104,32 @@ src:
 
             ------------------------------
             程序命令列表
-            首次运行时进行初始化检查
-            ktimer init
-            启动
-            ktimer start
-            停止
-            ktimer stop
-            重启
-            ktimer restart
-            当前程序状态
-            ktimer status
             查看版本号
             ktimer version
             查看帮助
-            ktimer/ktimer help
-            加入定时任务
-            ktimer add "ticker@1@date --rfc-3339=ns@0"
-            ktimer add -type=timer -time=1 -limit=1 -command="echo -e Hello Ktimer"
-            ktimer add -type=ticker -time=1 -limit=0 -command="date --rfc-3339=ns"
-            获取任务信息
-            ktimer get 912ec803b2ce49e4a541068d495ab570
-            删除定时任务
-            ktimer del 912ec803b2ce49e4a541068d495ab570
+            ktimer help
+            进行初始化处理
+            ktimer init
+            当前程序状态
+            ktimer status
+            启动服务
+            ktimer start -d
+            停止服务
+            ktimer stop 
+            重启服务
+            ktimer restart -d
             统计定时任务总数
             ktimer count
             清空删除所有任务
             ktimer clear
+            获取任务信息
+            ktimer get 912ec803b2ce49e4a541068d495ab570
+            删除定时任务
+            ktimer del 912ec803b2ce49e4a541068d495ab570
+            加入定时任务
+            ktimer add -type=timer -time=1 -limit=1 -command="echo -e Hello Ktimer"
+            ktimer add -type=ticker -time=1 -limit=0 -command="date --rfc-3339=ns"
+
 
 
             流程:
@@ -137,7 +144,7 @@ src:
                 default_timer = echo -e Hello Ktimer
                 default_ticker = date --rfc-3339=ns
 
-
+                ./main add -type="ticker" -time=5 -limit=3 -command="date --rfc-3339=ns" abc="x*y=z" efg
 
 
 
