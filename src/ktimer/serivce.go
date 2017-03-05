@@ -176,6 +176,7 @@ func ServiceStatus() {
 }
 
 func ServiceVersion() {
-
+	fmt.Println("Ktimer is a simple timer/ticker manager by golang.")
+	fmt.Println("Version ", VERSION)
+	fmt.Println("Author ", AUTHOR)
 }
-
