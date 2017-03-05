@@ -4,6 +4,7 @@ import (
 	//"github.com/astaxie/beego/config"
 	//"fmt"
 	"config"
+	"errors"
 	"os"
 )
 
@@ -18,6 +19,8 @@ task_max_num = 500000
 task_pool_key = ktimer:tasks:all
 #待运转任务缓存key
 task_trun_key = ktimer:tasks:second
+#分布式锁key
+task_lcok_key = ktimer:tasks:lock
 #任务过期限制.默认执行60秒内的任务,超过则抛弃;为0则不限制,全部执行
 task_expire_limit = 60
 
@@ -35,9 +38,8 @@ web_passwd = 123456
 redis.host = 127.0.0.1
 redis.port = 6379
 redis.db = 0
-;redis.passwd = 
+redis.passwd = 
 
-#日志
 [log]
 log.dir = log
 log.error_open = 1
@@ -80,8 +82,10 @@ func GetConfObj() (config.ConfigInterface, error) {
 	if CnfObj == nil {
 		file := GetConfFilePath()
 		CnfObj, err = config.NewConfig(file)
+		if err != nil {
+			err = errors.New("failed to read config file:" + file)
+		}
 	}
 
-	//println("in GetConfObj", CnfObj)
 	return CnfObj, err
 }

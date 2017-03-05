@@ -21,11 +21,12 @@ func GetRedisClient() (*redis.Client, error) {
 		host := CnfObj.String("redis::redis.host")
 		port := CnfObj.String("redis::redis.port")
 		pawd := CnfObj.String("redis::redis.passwd")
-		db, err2 := CnfObj.Int("redis::redis.db")
+		db, err := CnfObj.Int("redis::redis.db")
 		addr = host + ":" + port
-		fmt.Println(host, port, addr, pawd, db, err2, "redis conf")
-		if err2 != nil {
-			return client, err2
+		//fmt.Println(host, port, addr, pawd, db, err2, "redis conf")
+		if err != nil {
+			err = errors.New("read config failed,key [redis::redis.db].")
+			return client, err
 		}
 
 		client = redis.NewClient(&redis.Options{
@@ -34,7 +35,7 @@ func GetRedisClient() (*redis.Client, error) {
 			DB:       db,
 		})
 
-		return client, err2
+		return client, err
 	}
 
 	return client, err
@@ -49,6 +50,7 @@ func CheckRedis() (bool, error) {
 
 	client, err = GetRedisClient()
 	if err != nil {
+		err = errors.New("failed to get get redis client connection.")
 		return res, err
 	}
 
@@ -56,7 +58,7 @@ func CheckRedis() (bool, error) {
 	if err != nil {
 		return res, err
 	} else if pong != "PONG" {
-		err = errors.New("reids ping result not eq `PONG`")
+		err = errors.New("reids ping result not eq `PONG`.")
 		return res, err
 	}
 
@@ -83,13 +85,14 @@ func CheckLogdir() (bool, error) {
 	if !direxis {
 		err = os.MkdirAll(logdir, 0766)
 		if err != nil {
+			err = errors.New("failed to create log directory:" + logdir)
 			return false, err
 		}
 	} else {
 		write := Writeable(logdir)
 		err = os.Chmod(logdir, 0766)
 		if !write || err != nil {
-			err = errors.New("logdir canot write")
+			err = errors.New("logdir canot write:" + logdir)
 			return false, err
 		}
 	}
@@ -105,7 +108,7 @@ func CheckPid() (bool, error) {
 
 	pid := CnfObj.String("pidfile")
 	if pid == "" {
-		err = errors.New("pid path is empty")
+		err = errors.New("pid path is empty.")
 		return chk, err
 	}
 	pid = strings.Replace(pid, "\\", "/", -1)
@@ -118,11 +121,18 @@ func CheckPid() (bool, error) {
 	if !FileExist(pid) {
 		_, err = PidCreate(pid)
 		if err != nil {
+			err = errors.New("failed to create pid file:" + pid)
 			return chk, err
 		}
 	}
 
 	return chk, err
+}
+
+//服务错误处理
+func ServiceError(msg string, err error) {
+	fmt.Println(msg, err)
+	os.Exit(0)
 }
 
 //初始化(第一次执行时)
@@ -141,42 +151,44 @@ func ServiceInit() {
 	//检查redis
 	chk, err = CheckRedis()
 	if err != nil {
-		fmt.Println("redis connet has error:", err)
-		os.Exit(0)
+		ServiceError("redis connet has error:", err)
 	}
 
 	//检查日志目录
 	chk, err = CheckLogdir()
 	if err != nil {
-		fmt.Println("check log`s dir has error:", err)
+		ServiceError("check log`s dir has error:`", err)
 	}
 
 	//检查pid
 	chk, err = CheckPid()
 	if err != nil {
-		fmt.Println("check pid has error:", err)
+		ServiceError("check pid has error:", err)
 	}
 
 }
 
 func ServiceStart() {
+	ServiceInit()
 
 }
 
 func ServiceStop() {
+	ServiceInit()
 
 }
 
 func ServiceRestart() {
+	ServiceInit()
 
 }
 
 func ServiceStatus() {
+	ServiceInit()
 
 }
 
 func ServiceVersion() {
-	fmt.Println("Ktimer is a simple timer/ticker manager by golang.")
-	fmt.Println("Version ", VERSION)
-	fmt.Println("Author ", AUTHOR)
+	fmt.Printf("Version %s [%s]\n", VERSION, PUBDATE)
+	os.Exit(0)
 }

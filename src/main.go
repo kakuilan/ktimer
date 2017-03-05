@@ -2,10 +2,9 @@ package main
 
 import (
 	. "ktimer"
-	//"fmt"
 )
 
 func main() {
-	CatchCli()
-
+	//命令行处理
+    CatchCli()
 }
