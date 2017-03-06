@@ -100,8 +100,8 @@ func CheckLogdir() (bool, error) {
 	return true, err
 }
 
-//检查pid文件
-func CheckPid() (bool, error) {
+//检查pid目录
+func CheckPidDir() (bool, error) {
 	var err error
 	var chk bool = false
 	CnfObj, err = GetConfObj()
@@ -118,13 +118,19 @@ func CheckPid() (bool, error) {
 		pid = currdir + "/" + strings.TrimRight(pid, "/")
 	}
 
-	if !FileExist(pid) {
-		_, err = PidCreate(pid)
-		if err != nil {
-			err = errors.New("failed to create pid file:" + pid)
-			return chk, err
-		}
-	}
+    piddir := GetParentDirectory(pid)
+    chk = Writeable(piddir)
+    if !chk {
+        err = errors.New("pid`dir cannot be written:"+piddir)
+    }
+
+//	if !FileExist(pid) {
+//		_, err = PidCreate(pid)
+//		if err != nil {
+//			err = errors.New("failed to create pid file:" + pid)
+//			return chk, err
+//		}
+//	}
 
 	return chk, err
 }
@@ -135,17 +141,20 @@ func ServiceError(msg string, err error) {
 	os.Exit(0)
 }
 
-//初始化(第一次执行时)
+//初始化检查
 func ServiceInit() {
 	var err error
 	var chk bool
 
-	fmt.Println("CnfObj", CnfObj)
-
 	//检查配置文件
 	chk = CheckConfFile()
 	if !chk {
-		CreateConfFile()
+		chk,err = CreateConfFile()
+        if err !=nil {
+             conf := GetConfFilePath()
+             err = errors.New("conf file does not exist,and create failed:"+conf)
+            ServiceError("check conf has error.", err)
+         }
 	}
 
 	//检查redis
@@ -161,11 +170,12 @@ func ServiceInit() {
 	}
 
 	//检查pid
-	chk, err = CheckPid()
+	chk, err = CheckPidDir()
 	if err != nil {
 		ServiceError("check pid has error:", err)
 	}
 
+	fmt.Println("CnfObj", CnfObj)
 }
 
 func ServiceStart() {

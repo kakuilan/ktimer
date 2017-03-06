@@ -106,7 +106,16 @@ func CatchCli() {
 			ServiceStatus()
 		case "version":
 			ServiceVersion()
-		}
+        case "count" :
+            //TODO
+        case "clear" :
+            //TODO
+        case "get" :
+            //TODO
+        case "add" :
+            //TODO
+        
+        }
 
 		for j, arg := range os.Args {
 			fmt.Printf("arg[%d] = %s \n", j, arg)
