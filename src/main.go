@@ -7,8 +7,6 @@ import (
 
 func main() {
 	//命令行处理
-    fmt.Println(111, RunLoger)
-    ll,err := GetRunLoger()
-    fmt.Println(222, ll,err)
+    fmt.Println(111)
     CatchCli()
 }

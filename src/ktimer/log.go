@@ -48,3 +48,43 @@ func GetRunLoger() (interface{}, error) {
 
 	return RunLoger, err
 }
+
+//获取错误日志对象
+func GetErrLoger() (interface{}, error) {
+	var err error
+	if ErrLoger == nil {
+		CnfObj, err = GetConfObj()
+		if err != nil {
+			return ErrLoger, err
+		}
+		var logdir string
+		logdir, err = CheckLogdir()
+		if err != nil {
+			return ErrLoger, err
+		}
+
+		file := CnfObj.String("log::log.error_file")
+		maxsize, err := CnfObj.Int("log::log.maxsize")
+		if err != nil {
+			maxsize = 500
+		}
+		maxbackup, err := CnfObj.Int("log::log.maxbackup")
+		if err != nil {
+			maxbackup = 5
+		}
+		maxage, err := CnfObj.Int("log::log.maxage")
+		if err != nil {
+			maxage = 30
+		}
+
+		ErrLoger = &lumberjack.Logger{
+			Filename:   logdir + "/" + file,
+			MaxSize:    maxsize,
+			MaxBackups: maxbackup,
+			MaxAge:     maxage,
+		}
+
+	}
+
+	return ErrLoger, err
+}
