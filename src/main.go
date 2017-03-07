@@ -2,23 +2,21 @@ package main
 
 import (
 	"fmt"
-    "log"
 	. "ktimer"
+	//"log"
 )
 
 func main() {
 	//命令行处理
 	fmt.Println(111)
-	rl, _ := GetRunLoger()
-	el, _ := GetErrLoger()
+	rl,e1 := GetRunLoger()
+	el,e2 := GetErrLoger()
 	i := 20
-    gg := log.New(rl,"",log.LstdFlags)
-    for i > 0 {
-		rl.Write([]byte("this is a runing log"))
-		el.Write([]byte("this is a error log"))
-	    gg.Println("system logger hahah")
-        i--
+	for i > 0 {
+		rl.Println("this is a runing log.")
+		el.Println("this is a error log.")
+		i--
 	}
-	fmt.Println(rl, el)
+	fmt.Println(rl, el, e1, e2)
 	CatchCli()
 }
