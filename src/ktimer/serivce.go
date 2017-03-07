@@ -206,5 +206,9 @@ func ServiceVersion() {
 
 //服务异常处理
 func ServiceException() {
-    
+   // el,_ := GetErrLoger()
+    //if err := recover();err !=nil {
+      //  el.Write([]byte(fmt.Sprint(err)))
+   // }
+
 }

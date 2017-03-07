@@ -1,16 +1,14 @@
 package ktimer
 
 import (
-	//"fmt"
 	"gopkg.in/natefinch/lumberjack.v2"
-	//"reflect"
 )
 
 //全局日志对象
 var RunLoger, ErrLoger *lumberjack.Logger
 
 //获取运行日志对象
-func GetRunLoger() (interface{}, error) {
+func GetRunLoger() (*lumberjack.Logger, error) {
 	var err error
 	if RunLoger == nil {
 		CnfObj, err = GetConfObj()
@@ -50,7 +48,7 @@ func GetRunLoger() (interface{}, error) {
 }
 
 //获取错误日志对象
-func GetErrLoger() (interface{}, error) {
+func GetErrLoger() (*lumberjack.Logger, error) {
 	var err error
 	if ErrLoger == nil {
 		CnfObj, err = GetConfObj()
