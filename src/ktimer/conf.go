@@ -42,6 +42,12 @@ redis.passwd =
 
 [log]
 log.dir = log
+#日志最大尺寸M
+log.maxsize = 500
+#日志最多备份
+log.maxbackup = 5
+#日志保留天数
+log.maxage = 30
 log.error_open = 1
 log.error_file = error.log
 log.runed_open = 1

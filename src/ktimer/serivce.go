@@ -66,11 +66,11 @@ func CheckRedis() (bool, error) {
 }
 
 //检查日志目录
-func CheckLogdir() (bool, error) {
+func CheckLogdir() (string, error) {
 	var err error
 	CnfObj, err = GetConfObj()
 	if err != nil {
-		return false, err
+		return "", err
 	}
 
 	logdir := CnfObj.String("log::log.dir")
@@ -86,18 +86,18 @@ func CheckLogdir() (bool, error) {
 		err = os.MkdirAll(logdir, 0766)
 		if err != nil {
 			err = errors.New("failed to create log directory:" + logdir)
-			return false, err
+			return "", err
 		}
 	} else {
 		write := Writeable(logdir)
 		err = os.Chmod(logdir, 0766)
 		if !write || err != nil {
 			err = errors.New("logdir canot write:" + logdir)
-			return false, err
+			return "", err
 		}
 	}
 
-	return true, err
+	return logdir,err
 }
 
 //检查pid目录
@@ -138,7 +138,7 @@ func CheckPidDir() (bool, error) {
 //服务错误处理
 func ServiceError(msg string, err error) {
 	fmt.Println(msg, err)
-	os.Exit(0)
+	os.Exit(1)
 }
 
 //初始化检查
@@ -164,7 +164,7 @@ func ServiceInit() {
 	}
 
 	//检查日志目录
-	chk, err = CheckLogdir()
+	_, err = CheckLogdir()
 	if err != nil {
 		ServiceError("check log`s dir has error:`", err)
 	}
@@ -180,7 +180,7 @@ func ServiceInit() {
 
 func ServiceStart() {
 	ServiceInit()
-
+    TimerContainer()
 }
 
 func ServiceStop() {
@@ -198,7 +198,13 @@ func ServiceStatus() {
 
 }
 
+//版本
 func ServiceVersion() {
 	fmt.Printf("Version %s [%s]\n", VERSION, PUBDATE)
 	os.Exit(0)
+}
+
+//服务异常处理
+func ServiceException() {
+    
 }
