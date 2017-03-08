@@ -23,6 +23,10 @@ task_trun_key = ktimer:tasks:second
 task_lcok_key = ktimer:tasks:lock
 #任务过期限制.默认执行60秒内的任务,超过则抛弃;为0则不限制,全部执行
 task_expire_limit = 60
+#相同定时器的间隔限制.默认10秒内,若有多个相同定时器,只保留最后那个.为0则不限制.
+task_sametimer_interval = 10
+#相同断续器的间隔限制.默认0为不允许存在多个相同断续器.
+task_sameticker_interval = 0
 
 [web]
 #是否启用web
@@ -37,7 +41,7 @@ web_passwd = 123456
 [redis]
 redis.host = 127.0.0.1
 redis.port = 6379
-redis.db = 0
+redis.db = 1
 redis.passwd = 
 
 [log]
