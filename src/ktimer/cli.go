@@ -20,6 +20,7 @@ var Commands = []string{
     "get",
     "del",
     "add",
+    "update",
 }
 
 //打印帮助信息
@@ -117,7 +118,8 @@ func CatchCli() {
             //TODO
         case "add" :
             //TODO
-        
+        case "update" :
+            //TODO
         }
 
 		for j, arg := range os.Args {

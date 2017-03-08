@@ -38,6 +38,11 @@ func AddTimer() {
 
 }
 
+//更新定时器
+func UpdateTimer() {
+    
+}
+
 //获取定时器
 func GetTimer() {
 

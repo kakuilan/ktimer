@@ -15,6 +15,8 @@ const DEFAULT_CONF = `
 pidfile = ktimer.pid
 #最大任务数量
 task_max_num = 500000
+#最大任务天数
+task_max_day = 100
 #所有任务池缓存key
 task_pool_key = ktimer:tasks:all
 #待运转任务缓存key
