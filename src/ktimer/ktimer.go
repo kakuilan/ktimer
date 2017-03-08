@@ -15,9 +15,12 @@ const (
 //定时器容器
 func TimerContainer() {
     mt := time.Tick(time.Millisecond * 500)
+    rl,_ := GetRunLoger()
+    //panic("主动触发异常")
     for c := range mt {
         now := time.Now().UnixNano()
         fmt.Println(mt,c, now)
+        rl.Println("定时器运行")
         //MainTimer(c)
     }
 }

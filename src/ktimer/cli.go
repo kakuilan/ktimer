@@ -92,6 +92,9 @@ func CatchCli() {
 		if !isCommand {
 			commandErr(action)
 		}
+        
+        //设置异常处理
+        defer ServiceException()
 
 		switch action {
 		case "init":
