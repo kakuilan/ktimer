@@ -100,41 +100,6 @@ func CheckLogdir() (string, error) {
 	return logdir, err
 }
 
-//检查pid目录
-func CheckPidDir() (bool, error) {
-	var err error
-	var chk bool = false
-	CnfObj, err = GetConfObj()
-
-	pid := CnfObj.String("pidfile")
-	if pid == "" {
-		err = errors.New("pid path is empty.")
-		return chk, err
-	}
-	pid = strings.Replace(pid, "\\", "/", -1)
-	pos := strings.Index(pid, "/")
-	if pos == -1 {
-		currdir := GetCurrentDirectory()
-		pid = currdir + "/" + strings.TrimRight(pid, "/")
-	}
-
-	piddir := GetParentDirectory(pid)
-	chk = Writeable(piddir)
-	if !chk {
-		err = errors.New("pid`dir cannot be written:" + piddir)
-	}
-
-	//	if !FileExist(pid) {
-	//		_, err = PidCreate(pid)
-	//		if err != nil {
-	//			err = errors.New("failed to create pid file:" + pid)
-	//			return chk, err
-	//		}
-	//	}
-
-	return chk, err
-}
-
 //检查pid文件并返回路径
 func CheckPidFile() (string,error) {
     var err error
@@ -201,7 +166,7 @@ func ServiceInit() {
 	}
 
 	//检查pid
-	chk, err = CheckPidDir()
+	_, err = CheckPidFile()
 	if err != nil {
 		ServiceError("check pid has error:", err)
 	}
