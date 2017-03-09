@@ -8,6 +8,9 @@ import (
 	"syscall"
 )
 
+//全局pid变量
+var ServPidno int
+
 //获取pid文件的值
 func PidGetVue(pidfile string) (int, error) {
 	value, err := ioutil.ReadFile(pidfile)
@@ -100,6 +103,16 @@ func CheckCurrent2ServicePid()(bool,error) {
     }
 
     return chk,err
+}
+
+//设置当前服务pid
+func SetCurrentServicePid(pid int) {
+    ServPidno = pid
+}
+
+//获取当前服务pid
+func GetCurrentServicePid() int {
+    return ServPidno
 }
 
 

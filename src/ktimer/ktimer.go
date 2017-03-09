@@ -18,10 +18,16 @@ func TimerContainer() {
     rl,_ := GetRunLoger()
     //panic("主动触发异常")
     for c := range mt {
+        pidno,_ := GetServicePidNo()
+        ServPidno := GetCurrentServicePid()
+        if pidno!=ServPidno {
+            panic("check pid exception,service stopped.")
+        }
+
         now := time.Now().UnixNano()
         fmt.Println(mt,c, now)
         rl.Println("定时器运行")
-        //MainTimer(c)
+        MainTimer()
     }
 }
 

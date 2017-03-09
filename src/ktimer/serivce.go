@@ -174,9 +174,31 @@ func ServiceInit() {
 	fmt.Println("CnfObj", CnfObj)
 }
 
+//启动服务
 func ServiceStart() {
-	ServiceInit()
-	TimerContainer()
+	var chk bool
+    var err error
+    ServiceInit()
+    //检查pid
+    chk,err = CheckCurrent2ServicePid()
+    if(chk) {
+        ServiceError("current process and service are the same,start fail.",nil)
+    }
+    
+    ServPidno,_ := GetServicePidNo()
+    servIsRun,_ := PidIsActive(ServPidno)
+    if servIsRun {
+        ServiceError("service is running,start fail.",nil)
+    }
+
+    pidfile,_ := CheckPidFile()
+    ServPidno,err = PidCreate(pidfile)
+    if err != nil {
+        ServiceError("failed to create file during service startup.",nil)
+    }
+    SetCurrentServicePid(ServPidno)
+    
+    TimerContainer()
 }
 
 func ServiceStop() {
@@ -204,7 +226,8 @@ func ServiceVersion() {
 func ServiceException() {
 	el, _ := GetErrLoger()
 	if err := recover(); err != nil {
-		el.Println(err)
+		fmt.Println(err)
+        el.Println(err)
 	}
 
 }
