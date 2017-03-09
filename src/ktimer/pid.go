@@ -58,3 +58,8 @@ func PidCreate(pidfile string) (int, error) {
 		return pid, nil
 	}
 }
+
+//获取服务的pid进程号
+func GetServicePidNo() int {
+    
+}

@@ -135,6 +135,37 @@ func CheckPidDir() (bool, error) {
 	return chk, err
 }
 
+//检查pid文件并返回路径
+func CheckPidFile() (string,error) {
+    var err error
+    var pidfile string
+    CnfObj,err = GetConfObj()
+    if err !=nil {
+        return "",err
+    }
+
+    pidfile = CnfObj.String("pidfile")
+    if pidfile=="" {
+        err = errors.New("pid path is empty.")
+        return "",err
+    }
+
+    pidfile = strings.Replace(pidfile, "\\", "/", -1)
+    pos := strings.Index(pidfile, "/")
+    if pos == -1 {
+        currdir := GetCurrentDirectory()
+        pidfile = currdir + "/" + strings.TrimRight(pidfile, "/")
+    }
+
+    piddir := GetParentDirectory(pidfile)
+    chk := Writeable(piddir)
+    if !chk {
+        err = errors.New("pid`dir cannot be written:" + piddir)
+    }
+
+    return pidfile,err
+}
+
 //服务错误处理
 func ServiceError(msg string, err error) {
 	fmt.Println(msg, err)
