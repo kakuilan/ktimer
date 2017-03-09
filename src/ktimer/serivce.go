@@ -101,34 +101,34 @@ func CheckLogdir() (string, error) {
 }
 
 //检查pid文件并返回路径
-func CheckPidFile() (string,error) {
-    var err error
-    var pidfile string
-    CnfObj,err = GetConfObj()
-    if err !=nil {
-        return "",err
-    }
+func CheckPidFile() (string, error) {
+	var err error
+	var pidfile string
+	CnfObj, err = GetConfObj()
+	if err != nil {
+		return "", err
+	}
 
-    pidfile = CnfObj.String("pidfile")
-    if pidfile=="" {
-        err = errors.New("pid path is empty.")
-        return "",err
-    }
+	pidfile = CnfObj.String("pidfile")
+	if pidfile == "" {
+		err = errors.New("pid path is empty.")
+		return "", err
+	}
 
-    pidfile = strings.Replace(pidfile, "\\", "/", -1)
-    pos := strings.Index(pidfile, "/")
-    if pos == -1 {
-        currdir := GetCurrentDirectory()
-        pidfile = currdir + "/" + strings.TrimRight(pidfile, "/")
-    }
+	pidfile = strings.Replace(pidfile, "\\", "/", -1)
+	pos := strings.Index(pidfile, "/")
+	if pos == -1 {
+		currdir := GetCurrentDirectory()
+		pidfile = currdir + "/" + strings.TrimRight(pidfile, "/")
+	}
 
-    piddir := GetParentDirectory(pidfile)
-    chk := Writeable(piddir)
-    if !chk {
-        err = errors.New("pid`dir cannot be written:" + piddir)
-    }
+	piddir := GetParentDirectory(pidfile)
+	chk := Writeable(piddir)
+	if !chk {
+		err = errors.New("pid`dir cannot be written:" + piddir)
+	}
 
-    return pidfile,err
+	return pidfile, err
 }
 
 //服务错误处理
@@ -177,28 +177,28 @@ func ServiceInit() {
 //启动服务
 func ServiceStart() {
 	var chk bool
-    var err error
-    ServiceInit()
-    //检查pid
-    chk,err = CheckCurrent2ServicePid()
-    if(chk) {
-        ServiceError("current process and service are the same,start fail.",nil)
-    }
-    
-    ServPidno,_ := GetServicePidNo()
-    servIsRun,_ := PidIsActive(ServPidno)
-    if servIsRun {
-        ServiceError("service is running,start fail.",nil)
-    }
+	var err error
+	ServiceInit()
+	//检查pid
+	chk, err = CheckCurrent2ServicePid()
+	if chk {
+		ServiceError("current process and service are the same,start fail.", nil)
+	}
 
-    pidfile,_ := CheckPidFile()
-    ServPidno,err = PidCreate(pidfile)
-    if err != nil {
-        ServiceError("failed to create file during service startup.",nil)
-    }
-    SetCurrentServicePid(ServPidno)
-    
-    TimerContainer()
+	ServPidno, _ := GetServicePidNo()
+	servIsRun, _ := PidIsActive(ServPidno)
+	if servIsRun {
+		ServiceError("service is running,start fail.", nil)
+	}
+
+	pidfile, _ := CheckPidFile()
+	ServPidno, err = PidCreate(pidfile)
+	if err != nil {
+		ServiceError("failed to create file during service startup.", nil)
+	}
+	SetCurrentServicePid(ServPidno)
+
+	TimerContainer()
 }
 
 func ServiceStop() {
@@ -227,7 +227,7 @@ func ServiceException() {
 	el, _ := GetErrLoger()
 	if err := recover(); err != nil {
 		fmt.Println(err)
-        el.Println(err)
+		el.Println(err)
 	}
 
 }
