@@ -226,9 +226,9 @@ func ServiceStop() {
     if err !=nil {
         ServiceError("service process cannot find.", err)
     }
-    if err = serProcess.Release();err!=nil {
-        ServiceError("service process release fail.", err)
-    }
+    //if err = serProcess.Release();err!=nil {
+        //ServiceError("service process release fail.", err)
+    //}
     if err = serProcess.Kill(); err!=nil {
         ServiceError("service process kill fail.", err)
     }
