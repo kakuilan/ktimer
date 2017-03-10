@@ -21,7 +21,8 @@ func TimerContainer() {
         pidno,_ := GetServicePidNo()
         ServPidno := GetCurrentServicePid()
         if pidno!=ServPidno {
-            panic("check pid exception,service stopped.")
+            msg := fmt.Sprintf("check pid exception,service [%d] stopped.", ServPidno)
+            panic(msg)
         }
 
         now := time.Now().UnixNano()
