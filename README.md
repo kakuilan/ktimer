@@ -1,4 +1,4 @@
 # ktimer
-ktimer- a timer manage by golang
+ktimer- a simple timer/ticker task manager by golang.
 
 

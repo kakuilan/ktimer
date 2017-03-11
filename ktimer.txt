@@ -6,18 +6,49 @@ https://github.com/astaxie/beego/tree/master/config
 https://github.com/go-redis/redis
 https://github.com/zgljl2012/go-cli/blob/master/src/cli/cli.go
 https://github.com/takama/daemon 守护进程
+https://github.com/natefinch/lumberjack  日志
+https://github.com/apex/log
 参考文章
 https://my.oschina.net/u/943306/blog/149395
 https://dave.cheney.net/2013/10/15/how-does-the-go-build-command-work
 http://www.cnblogs.com/zhangym/p/6201603.html
 http://www.cnblogs.com/sevenyuan/archive/2013/02/28/2937275.html
 http://dmdgeeker.com/goBook/docs/ch07/file.html
+http://golangtc.com/t/5448aad4421aa93257000023  ticker
+http://ju.outofmemory.cn/entry/
+http://studygolang.com/resources/116
+http://blog.csdn.net/siddontang/article/details/18370541
+http://stackoverflow.com/questions/17797754/ticker-stop-behaviour-in-golang
 命令行 http://studygolang.com/articles/4682
 格式化输出 http://www.cnblogs.com/golove/p/3284304.html
 flag http://blog.studygolang.com/2013/02/%E6%A0%87%E5%87%86%E5%BA%93-%E5%91%BD%E4%BB%A4%E8%A1%8C%E5%8F%82%E6%95%B0%E8%A7%A3%E6%9E%90flag/
 http://kaiq.me/2016/01/09/go/golang-flag/
 分布式定时器 http://www.cnblogs.com/akwei/p/3170722.html
+panic http://studygolang.com/articles/1809
+http://www.oschina.net/translate/golang-graceful-stop
+https://grisha.org/blog/2014/06/03/graceful-restart-in-golang/
+http://stackoverflow.com/questions/11886531/terminating-a-process-started-with-os-exec-in-golang
 
+
+------------------------------------------
+安装git
+yum install git
+
+安装go
+rz -y go1.8.linux-amd64.tar.gz
+tar -zxvf go1.8.linux-amd64.tar.gz -C /usr/local/
+
+设置go环境变量
+vi /etc/profile
+vi /etc/zsh/zprofile
+
+export GOROOT=/usr/local/go
+export GOBIN=$GOROOT/bin
+PATH=$PATH:$GOBIN
+export PATH
+然后让配置立即生效
+source /etc/profile
+source /etc/zsh/zprofile
 
 开始
 git clone https://github.com/kakuilan/ktimer.git
@@ -70,6 +101,8 @@ src:
             pidfile = ktimer.pid
             #最大任务数量
             task_max_num = 500000
+            #最大任务天数
+            task_max_day = 100
             #所有任务池缓存key
             task_pool_key = ktimer:tasks:all
             #待运转任务缓存key
@@ -78,6 +111,10 @@ src:
             task_lcok_key = ktimer:tasks:lock
             #任务过期限制.默认执行60秒内的任务,超过则抛弃;为0则不限制,全部执行
             task_expire_limit = 60
+            #相同定时器的间隔限制.默认10秒内,若有多个相同定时器,只保留最后那个.为0则不限制.
+            task_sametimer_interval = 10
+            #相同断续器的间隔限制.默认0为不允许存在多个相同断续器.
+            task_sameticker_interval = 0
 
             [web]
             #是否启用web
@@ -92,11 +129,17 @@ src:
             [redis]
             redis.host = 127.0.0.1
             redis.port = 6379
-            redis.db = 0
+            redis.db = 1
             redis.passwd = 
 
             [log]
             log.dir = log
+            #日志最大尺寸M
+            log.maxsize = 500
+            #日志最多备份
+            log.maxbackup = 5
+            #日志保留天数
+            log.maxage = 30
             log.error_open = 1
             log.error_file = error.log
             log.runed_open = 1
@@ -104,10 +147,10 @@ src:
 
             ------------------------------
             程序命令列表
-            查看版本号
-            ktimer version
             查看帮助
             ktimer help
+            查看版本号
+            ktimer version
             进行初始化处理
             ktimer init
             当前程序状态
@@ -129,9 +172,9 @@ src:
             加入定时任务
             ktimer add -type=timer -time=1 -limit=1 -command="echo -e Hello Ktimer"
             ktimer add -type=ticker -time=1 -limit=0 -command="date --rfc-3339=ns"
-
-
-
+            更新定时任务
+            ktimer update -key=912ec803b2ce49e4a541068d495ab570 -time=5 -limit=6
+            ----------------------------------------------
             流程:
                 Init()
                 1. 检查是否有配置文件
@@ -143,8 +186,65 @@ src:
                 [task]
                 default_timer = echo -e Hello Ktimer
                 default_ticker = date --rfc-3339=ns
+                任务key = md5(具体任务)+':'+时间
+                key=>{
+                    'type' : '定时器类型:timer/ticker',
+                    'time' : '间隔秒数或时间戳',
+                    'limit' : '执行次数限制',
+                    'command' : '任务的具体命令',
+                    'run_num' : '已执行次数',
+                    'run_lasttime' : '上次执行时间',
+                    'run_nexttime' : '下次执行时间',
+
+                }
 
                 ./main add -type="ticker" -time=5 -limit=3 -command="date --rfc-3339=ns" abc="x*y=z" efg
+
+                -----------------------------------------
+                函数
+
+                获取系统时间戳限制
+                GetSysTimestampLimit() maxSeconds,maxTimestamp
+
+                生成定时器ID
+                MakeTimerId([]byte command) uint32 
+
+
+
+
+                -----------------------------------------
+                插件
+
+                git clone https://github.com/takama/daemon.git
+                go get github.com/takama/daemon
+                cd daemon/example/
+                vi myservice.go
+                var dependencies = []string{"dummy.service"}改成var dependencies = []string{"myservice.service"}
+                他是用systemd做daemon,这个只对coredump，kill-9会拉起程序，kill时不会拉起，要运维注意
+                go build myservice.go
+
+
+                git clone https://github.com/sevlyar/go-daemon.git
+                go get github.com/sevlyar/go-daemon
+                cd go-daemon/sample/
+
+
+
+                git clone https://github.com/VividCortex/godaemon.git
+                go get github.com/VividCortex/godaemon
+
+                import "gopkg.in/natefinch/lumberjack.v2"
+                go get gopkg.in/natefinch/lumberjack.v2
+
+                git clone https://github.com/spaolacci/murmur3.git
+                go get github.com/spaolacci/murmur3
+                -----------------------------------------
+
+
+
+
+
+
 
 
 
