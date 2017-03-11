@@ -211,6 +211,7 @@ func ServiceStart() {
 	TimerContainer()
 }
 
+//停止服务
 func ServiceStop() {
     var err error
     ServiceInit()
@@ -249,9 +250,9 @@ func ServiceStop() {
     fmt.Println(msg)
     rl.Println(msg)
     os.Exit(0)
-
 }
 
+//重启服务
 func ServiceRestart() {
     pid := os.Getpid()
     msg := fmt.Sprintf("service restarting... currentPid[%d]", pid)
@@ -272,9 +273,19 @@ func ServiceRestart() {
     ServiceStart()
 }
 
+//查看服务状态
 func ServiceStatus() {
 	ServiceInit()
+    
+    ServPidno, _ := GetServicePidNo()
+    servIsRun, _ := PidIsActive(ServPidno)
+    if servIsRun {
+        fmt.Printf("service [%d] is running.\n", ServPidno)
+    }else{
+        fmt.Println("service is not running.")
+    }
 
+    os.Exit(0)
 }
 
 //版本
