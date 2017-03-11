@@ -253,8 +253,23 @@ func ServiceStop() {
 }
 
 func ServiceRestart() {
-	ServiceInit()
+    pid := os.Getpid()
+    msg := fmt.Sprintf("service restarting... currentPid[%d]", pid)
+    rl,_ := GetRunLoger()
+    fmt.Println(msg)
+    rl.Println(msg)
+    
+    ServPidno, _ := GetServicePidNo()
+    servIsRun, _ := PidIsActive(ServPidno)
+    if servIsRun {
+        ServiceStop()
+    }else{
+        msg = "service not running."
+        fmt.Printf(msg)
+        rl.Println(msg)
+    }
 
+    ServiceStart()
 }
 
 func ServiceStatus() {
