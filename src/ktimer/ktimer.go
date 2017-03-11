@@ -6,7 +6,7 @@ import (
 )
 
 const (
-    PRODESC = "Ktimer is a simple timer/ticker manager by golang."
+    PRODESC = "Ktimer is a simple timer/ticker task manager by golang."
 	VERSION = "0.0.1"
     PUBDATE = "2017.3"
 	AUTHOR  = "kakuilan@163.com"
