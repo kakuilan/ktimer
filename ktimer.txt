@@ -7,7 +7,7 @@ https://github.com/go-redis/redis
 https://github.com/zgljl2012/go-cli/blob/master/src/cli/cli.go
 https://github.com/takama/daemon 守护进程
 https://github.com/natefinch/lumberjack  日志
-https://github.com/apex/log
+https://github.com/siddontang/ledisdb  redis替代
 参考文章
 https://my.oschina.net/u/943306/blog/149395
 https://dave.cheney.net/2013/10/15/how-does-the-go-build-command-work
@@ -146,7 +146,7 @@ src:
             log.runed_file = runed.log
 
             ------------------------------
-            程序命令列表
+            程序命令列表 --老版
             查看帮助
             ktimer help
             查看版本号
@@ -175,70 +175,103 @@ src:
             更新定时任务
             ktimer update -key=912ec803b2ce49e4a541068d495ab570 -time=5 -limit=6
             ----------------------------------------------
-            流程:
-                Init()
-                1. 检查是否有配置文件
-                2. 检查redis是否连接
-                3. 检查日志目录是否可写
-                4. 检查pid
+            程序命令列表 --新
+            查看帮助
+                ktimer help
+                查看版本号
+                    ktimer version
+                    查看服务状态(是否在运行)
+                        ktimer status
+                        查看运行时服务的信息
+                            ktimer info
+                            安装服务到系统
+                                ktimer install
+                                从系统卸载服务
+                                    ktimer remove
+                                    启动服务
+                                        ktimer start
+                                        停止服务
+                                            ktimer stop
+                                            重启服务
+                                                ktimer restart
+                                                统计当前任务总数
+                                                    ktimer count
+                                                    清空删除所有任务
+                                                        ktimer clear
+                                                        获取任务信息
+                                                            ktimer get 8610014451
+                                                            删除定时任务
+                                                                ktimer del 8610014451
+                                                                加入定时任务
+                                                                    ktimer add -type=timer -time=1 -limit=1 -command="echo -e Hello Ktimer"
+                                                                        ktimer add -type=ticker -time=1 -limit=0 -command="date --rfc-3339=ns"
+                                                                        更新定时任务
+                                                                            ktimer update -key=8610014451 -time=5 -limit=6
+                                                                            ----------------------------------------------
+                                                                            流程:
+                                                                                Init()
+                                                                                1. 检查是否有配置文件
+                                                                                2. 检查redis是否连接
+                                                                                3. 检查日志目录是否可写
+                                                                                4. 检查pid
 
-                #默认任务
-                [task]
-                default_timer = echo -e Hello Ktimer
-                default_ticker = date --rfc-3339=ns
-                任务key = md5(具体任务)+':'+时间
-                key=>{
-                    'type' : '定时器类型:timer/ticker',
-                    'time' : '间隔秒数或时间戳',
-                    'limit' : '执行次数限制',
-                    'command' : '任务的具体命令',
-                    'run_num' : '已执行次数',
-                    'run_lasttime' : '上次执行时间',
-                    'run_nexttime' : '下次执行时间',
+                                                                                #默认任务
+                                                                                [task]
+                                                                                default_timer = echo -e Hello Ktimer
+                                                                                default_ticker = date --rfc-3339=ns
+                                                                                任务key = md5(具体任务)+':'+时间
+                                                                                key=>{
+                                                                                    'type' : '定时器类型:timer/ticker',
+                                                                                    'time' : '间隔秒数或时间戳',
+                                                                                    'limit' : '执行次数限制',
+                                                                                    'command' : '任务的具体命令',
+                                                                                    'run_num' : '已执行次数',
+                                                                                    'run_lasttime' : '上次执行时间',
+                                                                                    'run_nexttime' : '下次执行时间',
 
-                }
+                                                                                }
 
-                ./main add -type="ticker" -time=5 -limit=3 -command="date --rfc-3339=ns" abc="x*y=z" efg
+                                                                                ./main add -type="ticker" -time=5 -limit=3 -command="date --rfc-3339=ns" abc="x*y=z" efg
 
-                -----------------------------------------
-                函数
+                                                                                -----------------------------------------
+                                                                                函数
 
-                获取系统时间戳限制
-                GetSysTimestampLimit() maxSeconds,maxTimestamp
+                                                                                获取系统时间戳限制
+                                                                                GetSysTimestampLimit() maxSeconds,maxTimestamp
 
-                生成定时器ID
-                MakeTimerId([]byte command) uint32 
-
-
-
-
-                -----------------------------------------
-                插件
-
-                git clone https://github.com/takama/daemon.git
-                go get github.com/takama/daemon
-                cd daemon/example/
-                vi myservice.go
-                var dependencies = []string{"dummy.service"}改成var dependencies = []string{"myservice.service"}
-                他是用systemd做daemon,这个只对coredump，kill-9会拉起程序，kill时不会拉起，要运维注意
-                go build myservice.go
-
-
-                git clone https://github.com/sevlyar/go-daemon.git
-                go get github.com/sevlyar/go-daemon
-                cd go-daemon/sample/
+                                                                                生成定时器ID
+                                                                                MakeTimerId([]byte command) uint32 
 
 
 
-                git clone https://github.com/VividCortex/godaemon.git
-                go get github.com/VividCortex/godaemon
 
-                import "gopkg.in/natefinch/lumberjack.v2"
-                go get gopkg.in/natefinch/lumberjack.v2
+                                                                                -----------------------------------------
+                                                                                插件
 
-                git clone https://github.com/spaolacci/murmur3.git
-                go get github.com/spaolacci/murmur3
-                -----------------------------------------
+                                                                                git clone https://github.com/takama/daemon.git
+                                                                                go get github.com/takama/daemon
+                                                                                cd daemon/example/
+                                                                                vi myservice.go
+                                                                                var dependencies = []string{"dummy.service"}改成var dependencies = []string{"myservice.service"}
+                                                                                他是用systemd做daemon,这个只对coredump，kill-9会拉起程序，kill时不会拉起，要运维注意
+                                                                                go build myservice.go
+
+
+                                                                                git clone https://github.com/sevlyar/go-daemon.git
+                                                                                go get github.com/sevlyar/go-daemon
+                                                                                cd go-daemon/sample/
+
+
+
+                                                                                git clone https://github.com/VividCortex/godaemon.git
+                                                                                go get github.com/VividCortex/godaemon
+
+                                                                                import "gopkg.in/natefinch/lumberjack.v2"
+                                                                                go get gopkg.in/natefinch/lumberjack.v2
+
+                                                                                git clone https://github.com/spaolacci/murmur3.git
+                                                                                go get github.com/spaolacci/murmur3
+                                                                                -----------------------------------------
 
 
 
