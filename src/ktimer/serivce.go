@@ -210,7 +210,13 @@ func ServiceInstall() {
 
 //卸载服务
 func ServiceRemove(){
-    
+   ServiceInit()
+    service,_ := GetDaemon()
+    status,err := service.Remove()
+    if err != nil {
+        ServiceError("service remove fail.",err)
+    }
+    fmt.Println(status)
 }
 
 //启动服务
