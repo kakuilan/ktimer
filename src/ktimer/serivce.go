@@ -185,9 +185,27 @@ func ServiceInit() {
 	fmt.Println("CnfObj", CnfObj)
 }
 
+//获取守护进程的服务对象
+func GetDaemon() (*KTService,error) {
+    var err error
+    var dependencies = []string{"ktimer.service"}
+    srv,err := daemon.New(SERNAME, SERDESC, dependencies...)
+    if err!=nil {
+        ServiceError("get daemon err:", err)
+    }
+    service := &KTService{srv}
+    return service,err
+} 
+
 //安装服务
 func ServiceInstall() {
-    
+    ServiceInit()
+    service,_ := GetDaemon()
+    status, err := service.Install()
+    if err != nil {
+        ServiceError("service install fail.",err)
+    }
+    fmt.Println(status)
 }
 
 //卸载服务

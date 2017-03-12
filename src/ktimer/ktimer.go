@@ -7,7 +7,7 @@ import (
 
 const (
     SERNAME = "ktimer"
-    SERDESC = "K'timer Service"
+    SERDESC = "Ktimer Service"
     PRODESC = "Ktimer is a simple timer/ticker task manager by golang."
 	VERSION = "0.0.1"
     PUBDATE = "2017.3"
