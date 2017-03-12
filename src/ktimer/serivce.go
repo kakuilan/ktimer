@@ -8,7 +8,13 @@ import (
 	"gopkg.in/redis.v5"
 	"os"
 	"strings"
+    "github.com/takama/daemon"
 )
+
+//定义KT服务类型
+type KTService struct {
+    daemon.Daemon
+}
 
 //获取redis连接
 func GetRedisClient() (*redis.Client, error) {
