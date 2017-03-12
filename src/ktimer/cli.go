@@ -76,9 +76,9 @@ func CatchCli() {
 	//获取命令行参数
 	argNum := len(os.Args)
 
-	//无参数直接显示使用方式
+	//无参数,则执行主体服务
 	if argNum == 1 {
-		Help()
+		ServiceMain()
 	} else {
 		action := os.Args[1]
 		action = strings.ToLower(action)
@@ -130,9 +130,6 @@ func CatchCli() {
 			//TODO
 		}
 
-		for j, arg := range os.Args {
-			fmt.Printf("arg[%d] = %s \n", j, arg)
-		}
 
 	}
 

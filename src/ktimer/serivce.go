@@ -243,10 +243,17 @@ func ServiceStart() {
 	}
 	SetCurrentServicePid(ServPidno)
 
-	msg := fmt.Sprintf("service [%d] start success.", ServPidno)
+    //开启守护进程
+    service,_ := GetDaemon()
+    statusmsg,err := service.Start()
+    if err != nil {
+        ServiceError("service daemon start fail.", err)
+    }
+
+	//msg := fmt.Sprintf("service [%d] start success.", ServPidno)
 	rl, _ := GetRunLoger()
-	fmt.Println(msg)
-	rl.Println(msg)
+	fmt.Println(statusmsg)
+	rl.Println(statusmsg)
 
 	TimerContainer()
 }
@@ -262,33 +269,36 @@ func ServiceStop() {
 		ServiceError("service not running.", nil)
 	}
 
+    //停止守护进程
+    service,_ := GetDaemon()
+    statusmsg,err := service.Stop()
+    if err != nil {
+        ServiceError("service daemon stop fail.", err)
+    }
+
 	//停止服务进程
-	serProcess, err := os.FindProcess(ServPidno)
-	if err != nil {
-		ServiceError("service process cannot find.", err)
-	}
-	//if err = serProcess.Release();err!=nil {
-	//ServiceError("service process release fail.", err)
+	//serProcess, err := os.FindProcess(ServPidno)
+	//if err != nil {
+	//	ServiceError("service process cannot find.", err)
 	//}
-	if err = serProcess.Kill(); err != nil {
-		ServiceError("service process kill fail.", err)
-	}
+    //if err = serProcess.Kill(); err != nil {
+	//	ServiceError("service process kill fail.", err)
+	//}
 
 	//删除pid
 	pidfile, err := CheckPidFile()
 	if err != nil {
 		ServiceError("check pif file has error.", err)
 	}
-
 	err = os.Remove(pidfile)
 	if err != nil {
 		ServiceError("pid file remove error.", err)
 	}
 
-	msg := fmt.Sprintf("service [%d] stop success.", ServPidno)
+	//msg := fmt.Sprintf("service [%d] stop success.", ServPidno)
 	rl, _ := GetRunLoger()
-	fmt.Println(msg)
-	rl.Println(msg)
+	fmt.Println(statusmsg)
+	rl.Println(statusmsg)
 	os.Exit(0)
 }
 
@@ -311,6 +321,11 @@ func ServiceRestart() {
 	}
 
 	ServiceStart()
+}
+
+//主体服务
+func ServiceMain() {
+    
 }
 
 //查看服务状态
