@@ -6,6 +6,7 @@ import (
 )
 
 const (
+    SERNAME = "ktimer"
     PRODESC = "Ktimer is a simple timer/ticker task manager by golang."
 	VERSION = "0.0.1"
     PUBDATE = "2017.3"
@@ -27,7 +28,7 @@ func TimerContainer() {
 
         now := time.Now().UnixNano()
         fmt.Println(mt,c, now)
-        rl.Println("定时器运行")
+        rl.Println(SERNAME, "定时器运行")
         MainTimer()
     }
 }

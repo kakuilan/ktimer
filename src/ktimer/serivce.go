@@ -179,6 +179,16 @@ func ServiceInit() {
 	fmt.Println("CnfObj", CnfObj)
 }
 
+//安装服务
+func ServiceInstall() {
+    
+}
+
+//卸载服务
+func ServiceRemove(){
+    
+}
+
 //启动服务
 func ServiceStart() {
 	var chk bool
@@ -292,6 +302,11 @@ func ServiceStatus() {
 func ServiceVersion() {
 	fmt.Printf("Version %s [%s]\n", VERSION, PUBDATE)
 	os.Exit(0)
+}
+
+//查看运行时服务的信息
+func ServiceInfo() {
+    
 }
 
 //服务异常处理

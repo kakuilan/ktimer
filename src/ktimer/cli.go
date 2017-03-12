@@ -7,20 +7,23 @@ import (
 	"strings"
 )
 
+//命令集
 var Commands = []string{
-    "help",
-    "version",
-    "init",
-    "status",
-    "start",
-    "stop",
-    "restart",
-    "count",
-    "clear",
-    "get",
-    "del",
-    "add",
-    "update",
+	"help",
+	"version",
+	"status",
+	"info",
+	"install",
+	"remove",
+	"start",
+	"stop",
+	"restart",
+	"count",
+	"clear",
+	"get",
+	"del",
+	"add",
+	"update",
 }
 
 //打印帮助信息
@@ -62,6 +65,7 @@ func Help() {
 	os.Exit(0)
 }
 
+//命令错误
 func commandErr(command string) {
 	fmt.Printf("The command error,please see help: [ktimer -help]\n")
 	os.Exit(0)
@@ -93,34 +97,38 @@ func CatchCli() {
 		if !isCommand {
 			commandErr(action)
 		}
-        
-        //设置异常处理
-        defer ServiceException()
+
+		//设置异常处理
+		defer ServiceException()
 
 		switch action {
-		case "init":
-			ServiceInit()
+		case "version":
+			ServiceVersion()
+		case "status":
+			ServiceStatus()
+		case "info":
+			ServiceInfo()
+		case "install":
+			ServiceInstall()
+		case "remove":
+			ServiceRemove()
 		case "start":
 			ServiceStart()
 		case "stop":
 			ServiceStop()
 		case "restart":
 			ServiceRestart()
-		case "status":
-			ServiceStatus()
-		case "version":
-			ServiceVersion()
-        case "count" :
-            //TODO
-        case "clear" :
-            //TODO
-        case "get" :
-            //TODO
-        case "add" :
-            //TODO
-        case "update" :
-            //TODO
-        }
+		case "count":
+			//TODO
+		case "clear":
+			//TODO
+		case "get":
+			//TODO
+		case "add":
+			//TODO
+		case "update":
+			//TODO
+		}
 
 		for j, arg := range os.Args {
 			fmt.Printf("arg[%d] = %s \n", j, arg)
