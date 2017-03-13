@@ -8,6 +8,6 @@ import (
 
 func main() {
 	//命令行处理
-	fmt.Println(111)
+	fmt.Println("begin")
 	CatchCli()
 }

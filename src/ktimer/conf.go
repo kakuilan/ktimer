@@ -54,10 +54,15 @@ log.maxsize = 500
 log.maxbackup = 5
 #日志保留天数
 log.maxage = 30
+#错误日志
 log.error_open = 1
 log.error_file = error.log
+#运行日志
 log.runed_open = 1
 log.runed_file = runed.log
+#web日志
+log.webac_open = 1
+log.webac_file = webac.log
 `
 
 //全局配置对象
