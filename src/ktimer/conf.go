@@ -6,6 +6,9 @@ import (
 	"config"
 	"errors"
 	"os"
+    "time"
+    "math/rand"
+    "regexp"
 )
 
 //默认配置
@@ -32,13 +35,13 @@ task_sameticker_interval = 0
 
 [web]
 #是否启用web
-web_enable = 1
+web.enable = 1
 #web端口
-web_port = 9558
+web.port = 9558
 #web监听IP
-web_bind_ip = 127.0.0.1
+web.bind_ip = 127.0.0.1
 #web访问密码
-web_passwd = 123456
+web.passwd = eCvN5BxH$bJc
 
 [redis]
 redis.host = 127.0.0.1
@@ -87,7 +90,12 @@ func CreateConfFile() (bool, error) {
 	fout, err := os.Create(confFile)
 	defer fout.Close()
 	if err == nil {
-		fout.WriteString(DEFAULT_CONF)
+        //生成新的web密码
+        pwdbyt := RandPwd(12,3)
+        pwdstr := "web.passwd = " + string(pwdbyt) +"\n"
+        re,_ := regexp.Compile(`web.passwd( )?=( )?.*\n`)
+        pwdstr = re.ReplaceAllString(DEFAULT_CONF, pwdstr)
+        fout.WriteString(pwdstr)
 	}
 
 	return res, err
@@ -105,4 +113,20 @@ func GetConfObj() (config.ConfigInterface, error) {
 	}
 
 	return CnfObj, err
+}
+
+//生成随机密码
+func RandPwd(size int, kind int) []byte {
+    //kind:0纯数字,1小写字母,2大写字母,3数字和大小写
+    ikind, kinds, result := kind, [][]int{[]int{10, 48}, []int{26, 97}, []int{26, 65}}, make([]byte, size)
+	is_all := kind > 2 || kind < 0
+	rand.Seed(time.Now().UnixNano())
+	for i := 0; i < size; i++ {
+		if is_all { // random ikind
+			ikind = rand.Intn(3)
+		}
+		scope, base := kinds[ikind][0], kinds[ikind][1]
+		result[i] = uint8(base + rand.Intn(scope))
+	}
+	return result
 }

@@ -28,7 +28,10 @@ panic http://studygolang.com/articles/1809
 http://www.oschina.net/translate/golang-graceful-stop
 https://grisha.org/blog/2014/06/03/graceful-restart-in-golang/
 http://stackoverflow.com/questions/11886531/terminating-a-process-started-with-os-exec-in-golang
-
+web http://www.cnblogs.com/yjf512/archive/2012/09/03/2668384.html
+https://segmentfault.com/a/1190000004445975
+http://www.cnblogs.com/yjf512/archive/2012/06/18/2554066.html
+http://stackoverflow.com/questions/33768557/how-to-bind-an-http-client-in-go-to-an-ip-address  golang bind ip
 
 ------------------------------------------
 安装git
@@ -118,13 +121,13 @@ src:
 
             [web]
             #是否启用web
-            web_enable = 1
+            web.enable = 1
             #web端口
-            web_port = 9558
+            web.port = 9558
             #web监听IP
-            web_bind_ip = 127.0.0.1
+            web.bind_ip = 127.0.0.1
             #web访问密码
-            web_passwd = 123456
+            web.passwd = eCvN5BxH$bJc
 
             [redis]
             redis.host = 127.0.0.1
@@ -150,35 +153,6 @@ src:
             log.webac_open = 1
             log.webac_file = webac.log
             ------------------------------
-            程序命令列表 --旧版
-            查看帮助
-            ktimer help
-            查看版本号
-            ktimer version
-            进行初始化处理
-            ktimer init
-            当前程序状态
-            ktimer status
-            启动服务
-            ktimer start -d
-            停止服务
-            ktimer stop 
-            重启服务
-            ktimer restart -d
-            统计定时任务总数
-            ktimer count
-            清空删除所有任务
-            ktimer clear
-            获取任务信息
-            ktimer get 912ec803b2ce49e4a541068d495ab570
-            删除定时任务
-            ktimer del 912ec803b2ce49e4a541068d495ab570
-            加入定时任务
-            ktimer add -type=timer -time=1 -limit=1 -command="echo -e Hello Ktimer"
-            ktimer add -type=ticker -time=1 -limit=0 -command="date --rfc-3339=ns"
-            更新定时任务
-            ktimer update -key=912ec803b2ce49e4a541068d495ab570 -time=5 -limit=6
-            ----------------------------------------------
             程序命令列表 --新
             查看帮助
                 ktimer help
@@ -237,45 +211,55 @@ src:
 
                                                                                 ./main add -type="ticker" -time=5 -limit=3 -command="date --rfc-3339=ns" abc="x*y=z" efg
 
-                                                                                -----------------------------------------
-                                                                                函数
+                                                                                WEB端: action包括help/version/info/count/clear/get/del/update
+                                                                                返回json:
+                                                                                    {
+                                                                                            "status" : "处理状态:true,false",
+                                                                                            "data" : "具体数据",
+                                                                                            "msg" : "提示信息",
 
-                                                                                获取系统时间戳限制
-                                                                                GetSysTimestampLimit() maxSeconds,maxTimestamp
-
-                                                                                生成定时器ID
-                                                                                MakeTimerId([]byte command) uint32 
-
-
+                                                                                    }
 
 
-                                                                                -----------------------------------------
-                                                                                插件
+                                                                                    -----------------------------------------
+                                                                                    函数
 
-                                                                                git clone https://github.com/takama/daemon.git
-                                                                                go get github.com/takama/daemon
-                                                                                cd daemon/example/
-                                                                                vi myservice.go
-                                                                                var dependencies = []string{"dummy.service"}改成var dependencies = []string{"myservice.service"}
-                                                                                他是用systemd做daemon,这个只对coredump，kill-9会拉起程序，kill时不会拉起，要运维注意
-                                                                                go build myservice.go
+                                                                                    获取系统时间戳限制
+                                                                                    GetSysTimestampLimit() maxSeconds,maxTimestamp
 
-
-                                                                                git clone https://github.com/sevlyar/go-daemon.git
-                                                                                go get github.com/sevlyar/go-daemon
-                                                                                cd go-daemon/sample/
+                                                                                    生成定时器ID
+                                                                                    MakeTimerId([]byte command) uint32 
 
 
 
-                                                                                git clone https://github.com/VividCortex/godaemon.git
-                                                                                go get github.com/VividCortex/godaemon
 
-                                                                                import "gopkg.in/natefinch/lumberjack.v2"
-                                                                                go get gopkg.in/natefinch/lumberjack.v2
+                                                                                    -----------------------------------------
+                                                                                    插件
 
-                                                                                git clone https://github.com/spaolacci/murmur3.git
-                                                                                go get github.com/spaolacci/murmur3
-                                                                                -----------------------------------------
+                                                                                    git clone https://github.com/takama/daemon.git
+                                                                                    go get github.com/takama/daemon
+                                                                                    cd daemon/example/
+                                                                                    vi myservice.go
+                                                                                    var dependencies = []string{"dummy.service"}改成var dependencies = []string{"myservice.service"}
+                                                                                    他是用systemd做daemon,这个只对coredump，kill-9会拉起程序，kill时不会拉起，要运维注意
+                                                                                    go build myservice.go
+
+
+                                                                                    git clone https://github.com/sevlyar/go-daemon.git
+                                                                                    go get github.com/sevlyar/go-daemon
+                                                                                    cd go-daemon/sample/
+
+
+
+                                                                                    git clone https://github.com/VividCortex/godaemon.git
+                                                                                    go get github.com/VividCortex/godaemon
+
+                                                                                    import "gopkg.in/natefinch/lumberjack.v2"
+                                                                                    go get gopkg.in/natefinch/lumberjack.v2
+
+                                                                                    git clone https://github.com/spaolacci/murmur3.git
+                                                                                    go get github.com/spaolacci/murmur3
+                                                                                    -----------------------------------------
 
 
 

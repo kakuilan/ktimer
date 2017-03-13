@@ -307,6 +307,7 @@ func ServiceMain() {
     rlg, _ := GetRunLoger()
     fmt.Println(msg)
     rlg.Println(msg)
+    WebContainer() 
     TimerContainer()
 }
 
