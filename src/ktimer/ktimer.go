@@ -17,19 +17,20 @@ const (
 //定时器容器
 func TimerContainer() {
     mt := time.Tick(time.Millisecond * 500)
-    rl,_ := GetRunLoger()
-    //panic("主动触发异常")
+    rlg,_ := GetRunLoger()
+    //wlg,_ := GetWebLoger()
+    elg,_ := GetErrLoger()
     for c := range mt {
         pidno,_ := GetServicePidNo()
-        ServPidno := GetCurrentServicePid()
-        if pidno!=ServPidno {
-            msg := fmt.Sprintf("check pid exception,service [%d] stopped.", ServPidno)
-            panic(msg)
+        servpidno := GetCurrentServicePid()
+        if pidno!=servpidno{
+            msg := fmt.Sprintf("check pid exception,service [%d] stopped.", servpidno)
+            elg.Println(msg)
         }
 
         now := time.Now().UnixNano()
         fmt.Println(mt,c, now)
-        rl.Println(SERNAME, "定时器运行")
+        rlg.Println(SERNAME, "定时器运行")
         MainTimer()
     }
 }

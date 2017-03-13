@@ -29,7 +29,6 @@ func GetRedisClient() (*redis.Client, error) {
 		pawd := CnfObj.String("redis::redis.passwd")
 		db, err := CnfObj.Int("redis::redis.db")
 		addr = host + ":" + port
-		//fmt.Println(host, port, addr, pawd, db, err2, "redis conf")
 		if err != nil {
 			err = errors.New("read config failed,key [redis::redis.db].")
 			return client, err
@@ -47,7 +46,7 @@ func GetRedisClient() (*redis.Client, error) {
 	return client, err
 }
 
-//检查redis是否连接
+//检查redis是否可连接
 func CheckRedis() (bool, error) {
 	var client *redis.Client
 	var err error
@@ -139,12 +138,24 @@ func CheckPidFile() (string, error) {
 
 //服务错误处理
 func ServiceError(msg string, err error) {
-	if err != nil {
+    el, _ := GetErrLoger()
+    el.Println(msg,err)
+    if err != nil {
 		fmt.Println(msg, err)
 		os.Exit(1)
 	} else {
 		fmt.Println(msg)
 		os.Exit(0)
+	}
+}
+
+//服务异常处理
+func ServiceException() {
+	el, _ := GetErrLoger()
+	if err := recover(); err != nil {
+		fmt.Println(err)
+		el.Println(err)
+		os.Exit(1)
 	}
 }
 
@@ -221,126 +232,87 @@ func ServiceRemove(){
 
 //启动服务
 func ServiceStart() {
-	var chk bool
-	var err error
-	ServiceInit()
-	//检查pid
-	chk, err = CheckCurrent2ServicePid()
-	if chk {
-		ServiceError("current process and service are the same,start fail.", nil)
-	}
-
-	ServPidno, _ := GetServicePidNo()
-	servIsRun, _ := PidIsActive(ServPidno)
-	if servIsRun {
-		ServiceError("service is running,start fail.", nil)
-	}
-
-	pidfile, _ := CheckPidFile()
-	ServPidno, err = PidCreate(pidfile)
-	if err != nil {
-		ServiceError("failed to create file during service startup.", nil)
-	}
-	SetCurrentServicePid(ServPidno)
-
-    //开启守护进程
+    ServiceInit()
     service,_ := GetDaemon()
-    statusmsg,err := service.Start()
+    status, err := service.Start()
     if err != nil {
-        ServiceError("service daemon start fail.", err)
+        ServiceError("service start fail.",err)
     }
-
-	//msg := fmt.Sprintf("service [%d] start success.", ServPidno)
-	rl, _ := GetRunLoger()
-	fmt.Println(statusmsg)
-	rl.Println(statusmsg)
-
-	TimerContainer()
+    fmt.Println(status)
 }
 
 //停止服务
 func ServiceStop() {
-	var err error
-	ServiceInit()
-
-	ServPidno, _ := GetServicePidNo()
-	servIsRun, _ := PidIsActive(ServPidno)
-	if !servIsRun {
-		ServiceError("service not running.", nil)
-	}
-
-    //停止守护进程
+    ServiceInit()
     service,_ := GetDaemon()
-    statusmsg,err := service.Stop()
+    status, err := service.Stop()
     if err != nil {
-        ServiceError("service daemon stop fail.", err)
+        ServiceError("service stop fail.",err)
+    }else{
+        //删除pid
+        pidfile, err := CheckPidFile()
+        if err==nil {
+            err = os.Remove(pidfile)
+            if err!=nil {
+                ServiceError("pid file remove error.", err)
+            }
+        }
     }
-
-	//停止服务进程
-	//serProcess, err := os.FindProcess(ServPidno)
-	//if err != nil {
-	//	ServiceError("service process cannot find.", err)
-	//}
-    //if err = serProcess.Kill(); err != nil {
-	//	ServiceError("service process kill fail.", err)
-	//}
-
-	//删除pid
-	pidfile, err := CheckPidFile()
-	if err != nil {
-		ServiceError("check pif file has error.", err)
-	}
-	err = os.Remove(pidfile)
-	if err != nil {
-		ServiceError("pid file remove error.", err)
-	}
-
-	//msg := fmt.Sprintf("service [%d] stop success.", ServPidno)
-	rl, _ := GetRunLoger()
-	fmt.Println(statusmsg)
-	rl.Println(statusmsg)
-	os.Exit(0)
-}
-
-//重启服务
-func ServiceRestart() {
-	pid := os.Getpid()
-	msg := fmt.Sprintf("service restarting... currentPid[%d]", pid)
-	rl, _ := GetRunLoger()
-	fmt.Println(msg)
-	rl.Println(msg)
-
-	ServPidno, _ := GetServicePidNo()
-	servIsRun, _ := PidIsActive(ServPidno)
-	if servIsRun {
-		ServiceStop()
-	} else {
-		msg = "service not running."
-		fmt.Printf(msg)
-		rl.Println(msg)
-	}
-
-	ServiceStart()
-}
-
-//主体服务
-func ServiceMain() {
-    
+    fmt.Println(status)
 }
 
 //查看服务状态
 func ServiceStatus() {
-	ServiceInit()
+    ServiceInit()
+    service,_ := GetDaemon()
+    status, err := service.Status()
+    if err != nil {
+        ServiceError("service status fail.",err)
+    }
+    fmt.Println(status)
+}
 
-	ServPidno, _ := GetServicePidNo()
-	servIsRun, _ := PidIsActive(ServPidno)
-	if servIsRun {
-		fmt.Printf("service [%d] is running.\n", ServPidno)
-	} else {
-		fmt.Println("service is not running.")
-	}
+//重启服务
+func ServiceRestart() {
+    ServiceStop()
+    ServiceStart()
+}
 
-	os.Exit(0)
+//主体服务
+func ServiceMain() {
+    var chk bool
+    var err error
+    var msg string
+    
+    ServiceInit()
+    
+    //检查pid
+    chk, err = CheckCurrent2ServicePid()
+    servpidno, _ := GetServicePidNo()
+    servIsRun, _ := PidIsActive(servpidno)
+    if chk || servIsRun {
+        fmt.Printf("ktimer service [%d] is running...\n", servpidno)
+        os.Exit(0)
+    }
+
+    pidfile, _ := CheckPidFile()
+    ServPidno, err = PidCreate(pidfile)
+    if err!= nil {
+        msg = fmt.Sprintf("main service create pid fail:[%s]\n", pidfile)
+        ServiceError(msg, nil)
+    }
+    SetCurrentServicePid(ServPidno)
+   
+    msg = fmt.Sprintf("main service run success[%d].", ServPidno)
+    rlg, _ := GetRunLoger()
+    fmt.Println(msg)
+    rlg.Println(msg)
+    TimerContainer()
+}
+
+//查看运行时服务的信息
+func ServiceInfo() {
+    
 }
 
 //查看版本
@@ -349,17 +321,3 @@ func ServiceVersion() {
 	os.Exit(0)
 }
 
-//查看运行时服务的信息
-func ServiceInfo() {
-    
-}
-
-//服务异常处理
-func ServiceException() {
-	el, _ := GetErrLoger()
-	if err := recover(); err != nil {
-		fmt.Println(err)
-		el.Println(err)
-		os.Exit(1)
-	}
-}

@@ -140,13 +140,17 @@ src:
             log.maxbackup = 5
             #日志保留天数
             log.maxage = 30
+            #错误日志
             log.error_open = 1
             log.error_file = error.log
+            #运行日志
             log.runed_open = 1
             log.runed_file = runed.log
-
+            #web日志
+            log.webac_open = 1
+            log.webac_file = webac.log
             ------------------------------
-            程序命令列表 --老版
+            程序命令列表 --旧版
             查看帮助
             ktimer help
             查看版本号
