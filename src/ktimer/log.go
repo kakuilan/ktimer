@@ -27,7 +27,7 @@ func GetLogLum(logname string) (*lumberjack.Logger, int, error) {
 		return lum, open, err
 	}
 
-	open, err := CnfObj.Int("log::log." + logname + "_open")
+	open, err = CnfObj.Int("log::log." + logname + "_open")
 	if err != nil {
 		open, err = 1, nil
 	}
@@ -86,4 +86,50 @@ func GetRunLoger() (*log.Logger, error) {
     return lg,err
 }
 
+//获取web日志对象
+func GetWebLoger() (*log.Logger, error) {
+    var lg *log.Logger
+    var err error
 
+    CnfObj, err = GetConfObj()
+    if err!=nil {
+        return lg,err
+    }
+
+    lum,open,err := GetLogLum("webac")
+    if err!=nil {
+        return lg,err
+    }
+
+    if open>=1 {
+        lg = log.New(lum, "", log.Ldate|log.Lmicroseconds)
+    }else{
+        lg = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
+    }
+
+    return lg,err 
+}
+
+//获取错误日志对象
+func GetErrLoger() (*log.Logger, error) {
+    var lg *log.Logger
+    var err error
+
+    CnfObj, err = GetConfObj()
+    if err!=nil {
+        return lg,err
+    }
+
+    lum,open,err := GetLogLum("error")
+    if err!=nil {
+        return lg,err
+    }
+
+    if open>=1 {
+        lg = log.New(lum, "", log.Ldate|log.Lmicroseconds)
+    }else{
+        lg = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
+    }
+
+    return lg,err 
+}
