@@ -308,7 +308,7 @@ func ServiceMain() {
     fmt.Println(msg)
     rlg.Println(msg)
     WebContainer() 
-    TimerContainer()
+    //TimerContainer()
 }
 
 //查看运行时服务的信息

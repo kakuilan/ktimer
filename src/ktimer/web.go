@@ -2,7 +2,7 @@ package ktimer
 import (
     "net"
     "fmt"
-    "os"
+//    "os"
     "time"
 )
 
@@ -26,14 +26,15 @@ func WebContainer() {
         }
         bind_ip := CnfObj.String("web::web.bind_ip")
         passwd := CnfObj.String("web::web.passwd")
-
+        portdesc := ":"+fmt.Sprint(port)
+        fmt.Println(333, open,port,bind_ip,passwd, portdesc)
+        
         //开启监听
-        listener,err := net.Listen("tcp", ":"+string(port))
+        listener,err := net.Listen("tcp", portdesc)
         if err!=nil {
             ServiceError("web server start listener fail.", err)
         }
         defer listener.Close()
-        fmt.Println(open,port,bind_ip,passwd)
 
         wlg,_ := GetWebLoger()
         for{
@@ -54,7 +55,7 @@ func WebContainer() {
         }
     }
 
-    os.Exit(0)
+    //os.Exit(0)
 }
 
 func WebHandler(conn net.Conn) {
