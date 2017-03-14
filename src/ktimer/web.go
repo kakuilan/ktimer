@@ -1,9 +1,12 @@
 package ktimer
 import (
-    "net"
+    "net/http"
     "fmt"
-//    "os"
+    "os"
+    "os/signal"
     "time"
+    "context"
+    "syscall"
 )
 
 //WEB容器
@@ -29,58 +32,43 @@ func WebContainer() {
         portdesc := ":"+fmt.Sprint(port)
         fmt.Println(333, open,port,bind_ip,passwd, portdesc)
         
-        //开启监听
-        listener,err := net.Listen("tcp", portdesc)
-        if err!=nil {
-            ServiceError("web server start listener fail.", err)
+        //注册http请求的处理方法
+        http.HandleFunc("/", WebHandler)
+        srv := &http.Server{
+            Addr: portdesc,
+            Handler: http.DefaultServeMux,
+            ReadTimeout: 10 * time.Second,
+            WriteTimeout: 10 * time.Second,
+            MaxHeaderBytes: 1 << 20,
         }
-        defer listener.Close()
+        slg,_ := GetSerLoger()
 
-        wlg,_ := GetWebLoger()
-        for{
-            //循环接收客户端的连接,没有连接时会阻塞,出错则跳出循环
-            conn,err := listener.Accept()
-            if err != nil {
-                msg = "client accept has error."
-                fmt.Println(msg, err)
-                wlg.Println(msg, err)
-                break
+        go func(){
+            //启动http服务
+            slg.Println("web server starting...")
+            if err := srv.ListenAndServe(); err!=nil {
+                ServiceError("web server start listen fail.", err)
             }
+        }()
 
-            msg = "web server accept new connection."
-            fmt.Println(msg)
-            wlg.Println(msg)
-
-            go WebHandler(conn)
-        }
+        //监听系统信号
+        stopChan := make(chan os.Signal)
+        signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM)
+        <-stopChan
+        msg = "shutting down web server..."
+        slg.Println(msg)
+        ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
+        srv.Shutdown(ctx)
+        msg = "web server gracefully stopped."
+        slg.Println(msg)
     }
 
     //os.Exit(0)
 }
 
-func WebHandler(conn net.Conn) {
-   defer conn.Close() 
-   for {
-       //循环从连接中读取请求内容,没有请求时会阻塞,出错则跳出循环
-        request := make([]byte, 128)
-        readLength,err := conn.Read(request)
 
-        if err != nil {
-            fmt.Println(err)
-            break
-        }
-
-        if readLength == 0{
-            fmt.Println(err)
-            break
-        }
-
-        //控制台输出读取到的请求内容，并在请求内容前加上hello和时间后向客户端输出
-        fmt.Println("[server] request from ", string(request))
-        conn.Write([]byte("hello " + string(request) + ", time: " + time.Now().Format("2006-01-02 15:04:05")))
-
-
-   }
-
+//定义http请求的处理方法
+func WebHandler(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, "Hello World, %v\n", time.Now())
 
 }

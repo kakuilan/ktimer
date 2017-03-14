@@ -8,7 +8,7 @@ import (
 )
 
 //全局日志对象
-var RunLoger, ErrLoger, WebLoger *log.Logger
+var SerLoger, RunLoger, ErrLoger, WebLoger *log.Logger
 
 //获取日志的lumberjack配置
 func GetLogLum(logname string) (*lumberjack.Logger, int, error) {
@@ -60,6 +60,31 @@ func GetLogLum(logname string) (*lumberjack.Logger, int, error) {
 	}
 
 	return lum, open, err
+}
+
+//获取服务日志对象
+func GetSerLoger() (*log.Logger, error) {
+
+    var lg *log.Logger
+    var err error
+
+    CnfObj, err = GetConfObj()
+    if err!=nil {
+        return lg,err
+    }
+
+    lum,open,err := GetLogLum("serve")
+    if err!=nil {
+        return lg,err
+    }
+
+    if open>=1 {
+        lg = log.New(lum, "", log.Ldate|log.Lmicroseconds)
+    }else{
+        lg = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
+    }
+
+    return lg,err
 }
 
 //获取运行日志对象

@@ -57,6 +57,9 @@ log.maxsize = 500
 log.maxbackup = 5
 #日志保留天数
 log.maxage = 30
+#服务日志
+log.serve_open = 1
+log.serve_file = error.log
 #错误日志
 log.error_open = 1
 log.error_file = error.log

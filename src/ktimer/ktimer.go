@@ -16,10 +16,11 @@ const (
 
 //定时器容器
 func TimerContainer() {
-    mt := time.Tick(time.Millisecond * 500)
     rlg,_ := GetRunLoger()
-    //wlg,_ := GetWebLoger()
     elg,_ := GetErrLoger()
+    go func(){
+        
+    mt := time.Tick(time.Millisecond * 500)
     for c := range mt {
         pidno,_ := GetServicePidNo()
         servpidno := GetCurrentServicePid()
@@ -33,6 +34,8 @@ func TimerContainer() {
         rlg.Println(SERNAME, "定时器运行")
         MainTimer()
     }
+    }()
+    
 }
 
 //主体定时器
