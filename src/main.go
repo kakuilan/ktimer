@@ -2,12 +2,11 @@ package main
 
 import (
 	"fmt"
-	. "ktimer"
-	//"log"
+	"ktimer"
 )
 
 func main() {
 	//命令行处理
 	fmt.Println("begin")
-	CatchCli()
+	ktimer.CatchCli()
 }

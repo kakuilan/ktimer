@@ -5,15 +5,15 @@ import (
 	//"github.com/astaxie/beego/config"
 	//"config"
 	"errors"
+	"github.com/takama/daemon"
 	"gopkg.in/redis.v5"
 	"os"
 	"strings"
-    "github.com/takama/daemon"
 )
 
 //定义KT服务类型
 type KTService struct {
-    daemon.Daemon
+	daemon.Daemon
 }
 
 //获取redis连接
@@ -136,11 +136,17 @@ func CheckPidFile() (string, error) {
 	return pidfile, err
 }
 
+//服务日志
+func ServiceLog(msg string, err error) {
+	lg, _ := GetSerLoger()
+	lg.Println(msg, err)
+}
+
 //服务错误处理
 func ServiceError(msg string, err error) {
-    el, _ := GetErrLoger()
-    el.Println(msg,err)
-    if err != nil {
+	el, _ := GetErrLoger()
+	el.Println(msg, err)
+	if err != nil {
 		fmt.Println(msg, err)
 		os.Exit(1)
 	} else {
@@ -197,123 +203,137 @@ func ServiceInit() {
 }
 
 //获取守护进程的服务对象
-func GetDaemon() (*KTService,error) {
-    var err error
-    var dependencies = []string{"ktimer.service"}
-    srv,err := daemon.New(SERNAME, SERDESC, dependencies...)
-    if err!=nil {
-        ServiceError("get daemon err:", err)
-    }
-    service := &KTService{srv}
-    return service,err
-} 
+func GetDaemon() (*KTService, error) {
+	var err error
+	var dependencies = []string{"ktimer.service"}
+	srv, err := daemon.New(SERNAME, SERDESC, dependencies...)
+	if err != nil {
+		ServiceError("get daemon err:", err)
+	}
+	service := &KTService{srv}
+	return service, err
+}
 
 //安装服务
 func ServiceInstall() {
-    ServiceInit()
-    service,_ := GetDaemon()
-    status, err := service.Install()
-    if err != nil {
-        ServiceError("service install fail.",err)
-    }
-    fmt.Println(status)
+	ServiceInit()
+	service, _ := GetDaemon()
+	status, err := service.Install()
+	if err != nil {
+		ServiceError("service install fail.", err)
+	}
+	fmt.Println(status)
+	ServiceLog("service install success.", nil)
 }
 
 //卸载服务
-func ServiceRemove(){
-   ServiceInit()
-    service,_ := GetDaemon()
-    status,err := service.Remove()
-    if err != nil {
-        ServiceError("service remove fail.",err)
-    }
-    fmt.Println(status)
+func ServiceRemove() {
+	ServiceInit()
+	service, _ := GetDaemon()
+	status, err := service.Remove()
+	if err != nil {
+		ServiceError("service remove fail.", err)
+	}
+	fmt.Println(status)
+	ServiceLog("service remove success.", nil)
 }
 
 //启动服务
 func ServiceStart() {
-    ServiceInit()
-    service,_ := GetDaemon()
-    status, err := service.Start()
-    if err != nil {
-        ServiceError("service start fail.",err)
-    }
-    fmt.Println(status)
+	ServiceInit()
+	service, _ := GetDaemon()
+	status, err := service.Start()
+	if err != nil {
+		ServiceError("service start fail.", err)
+	}
+	fmt.Println(status)
+	ServiceLog("service start success.", nil)
 }
 
 //停止服务
 func ServiceStop() {
-    ServiceInit()
-    service,_ := GetDaemon()
-    status, err := service.Stop()
-    if err != nil {
-        ServiceError("service stop fail.",err)
-    }else{
-        //删除pid
-        pidfile, err := CheckPidFile()
-        if err==nil {
-            err = os.Remove(pidfile)
-            if err!=nil {
-                ServiceError("pid file remove error.", err)
-            }
-        }
+	ServiceInit()
+    var status string
+    var err error
+	//先检查是否在运行
+    status = "service is stopped."
+    serPidno, _ := GetServicePidNo()
+    chk, _ := PidIsActive(serPidno)
+    if chk {
+       service, _ := GetDaemon()
+		status, err = service.Stop()
+		if err != nil {
+			ServiceError("service stop fail.", err)
+		} else {
+			//删除pid
+			pidfile, err := CheckPidFile()
+			if err == nil {
+				err = os.Remove(pidfile)
+				if err != nil {
+					ServiceError("pid file remove error.", err)
+				}
+			}
+		}
     }
-    fmt.Println(status)
+
+	fmt.Println(status)
+	ServiceLog("service stop success.", nil)
 }
 
 //查看服务状态
 func ServiceStatus() {
-    ServiceInit()
-    service,_ := GetDaemon()
-    status, err := service.Status()
-    if err != nil {
-        ServiceError("service status fail.",err)
-    }
-    fmt.Println(status)
+	ServiceInit()
+	service, _ := GetDaemon()
+	status, err := service.Status()
+	if err != nil {
+		ServiceError("service status fail.", err)
+	}
+	fmt.Println(status)
 }
 
 //重启服务
 func ServiceRestart() {
-    ServiceStop()
-    ServiceStart()
+	ServiceLog("service restart begining...", nil)
+	ServiceStop()
+	ServiceStart()
+	ServiceLog("service restart success.", nil)
 }
 
 //主体服务
 func ServiceMain() {
-    var chk bool
-    var err error
-    var msg string
-    
-    ServiceInit()
-    
-    //检查pid
-    chk, err = CheckCurrent2ServicePid()
-    servpidno, _ := GetServicePidNo()
-    servIsRun, _ := PidIsActive(servpidno)
-    if chk || servIsRun {
-        fmt.Printf("ktimer service [%d] is running...\n", servpidno)
-        os.Exit(0)
-    }
+	var chk bool
+	var err error
+	var msg string
 
-    pidfile, _ := CheckPidFile()
-    ServPidno, err = PidCreate(pidfile)
-    if err!= nil {
-        msg = fmt.Sprintf("main service create pid fail:[%s]\n", pidfile)
-        ServiceError(msg, nil)
-    }
-    SetCurrentServicePid(ServPidno)
-   
-    msg = fmt.Sprintf("main service run success[%d].", ServPidno)
-    rlg, _ := GetRunLoger()
-    fmt.Println(msg)
-    rlg.Println(msg)
-    TimerContainer()
-    WebContainer() 
+	ServiceInit()
+
+	//检查pid
+	chk, err = CheckCurrent2ServicePid()
+	servpidno, _ := GetServicePidNo()
+	servIsRun, _ := PidIsActive(servpidno)
+	if chk || servIsRun {
+		fmt.Printf("ktimer service [%d] is running...\n", servpidno)
+		os.Exit(0)
+	}
+
+	pidfile, _ := CheckPidFile()
+	ServPidno, err = PidCreate(pidfile)
+	if err != nil {
+		msg = fmt.Sprintf("main service create pid fail:[%s]\n", pidfile)
+		ServiceError(msg, nil)
+	}
+	SetCurrentServicePid(ServPidno)
+
+	msg = fmt.Sprintf("main service run success[%d].", ServPidno)
+	ServiceLog(msg, nil)
+	fmt.Println(msg)
+	TimerContainer()
+	WebContainer()
 }
 
 //查看运行时服务的信息
 func ServiceInfo() {
-    
+
 }
 
 //查看版本
@@ -321,4 +341,3 @@ func ServiceVersion() {
 	fmt.Printf("Version %s [%s]\n", VERSION, PUBDATE)
 	os.Exit(0)
 }
-
