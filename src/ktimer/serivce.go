@@ -240,7 +240,19 @@ func ServiceRemove() {
 
 //启动服务
 func ServiceStart() {
+	var chk bool
+	var msg string
+
 	ServiceInit()
+	serPidno, _ := GetServicePidNo()
+	chk, _ = PidIsActive(serPidno)
+	if chk {
+		msg = fmt.Sprintf("service [%d] is running,start fail.", serPidno)
+		ServiceLog(msg, nil)
+		fmt.Println(msg)
+		os.Exit(0)
+	}
+
 	service, _ := GetDaemon()
 	status, err := service.Start()
 	if err != nil {
@@ -253,28 +265,36 @@ func ServiceStart() {
 //停止服务
 func ServiceStop() {
 	ServiceInit()
-    var status string
-    var err error
+	var status string
+	var err error
 	//先检查是否在运行
-    status = "service is stopped."
-    serPidno, _ := GetServicePidNo()
-    chk, _ := PidIsActive(serPidno)
-    if chk {
-       service, _ := GetDaemon()
+	status = "service is stopped."
+	serPidno, _ := GetServicePidNo()
+	chk, _ := PidIsActive(serPidno)
+	if chk {
+		service, _ := GetDaemon()
 		status, err = service.Stop()
 		if err != nil {
-			ServiceError("service stop fail.", err)
-		} else {
-			//删除pid
-			pidfile, err := CheckPidFile()
-			if err == nil {
-				err = os.Remove(pidfile)
-				if err != nil {
-					ServiceError("pid file remove error.", err)
-				}
+			serProcess, err2 := os.FindProcess(serPidno)
+			if err2 != nil {
+				ServiceError("service stop fail.", err)
+			}
+			if err = serProcess.Kill(); err != nil {
+				ServiceError("service process kill fail.", err)
+			}
+			status = "service stop success."
+		}
+
+		//删除pid
+		pidfile, err := CheckPidFile()
+		if err == nil {
+			err = os.Remove(pidfile)
+			if err != nil {
+				ServiceError("pid file remove error.", err)
 			}
 		}
-    }
+
+	}
 
 	fmt.Println(status)
 	ServiceLog("service stop success.", nil)
