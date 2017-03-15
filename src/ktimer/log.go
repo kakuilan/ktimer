@@ -4,7 +4,7 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 	"log"
 	"os"
-	//"fmt"
+	//	"fmt"
 )
 
 //全局日志对象
@@ -64,97 +64,109 @@ func GetLogLum(logname string) (*lumberjack.Logger, int, error) {
 
 //获取服务日志对象
 func GetSerLoger() (*log.Logger, error) {
+	var err error
+	if SerLoger == nil {
+		var lg *log.Logger
 
-    var lg *log.Logger
-    var err error
+		CnfObj, err = GetConfObj()
+		if err != nil {
+			return lg, err
+		}
 
-    CnfObj, err = GetConfObj()
-    if err!=nil {
-        return lg,err
-    }
+		lum, open, err := GetLogLum("serve")
+		if err != nil {
+			return lg, err
+		}
 
-    lum,open,err := GetLogLum("serve")
-    if err!=nil {
-        return lg,err
-    }
+		if open >= 1 {
+			lg = log.New(lum, "", log.Ldate|log.Lmicroseconds)
+		} else {
+			lg = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
+		}
+		SerLoger = lg
+	}
 
-    if open>=1 {
-        lg = log.New(lum, "", log.Ldate|log.Lmicroseconds)
-    }else{
-        lg = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
-    }
-
-    return lg,err
+	return SerLoger, err
 }
 
 //获取运行日志对象
 func GetRunLoger() (*log.Logger, error) {
-    var lg *log.Logger
-    var err error
+	var err error
+	if RunLoger == nil {
+		var lg *log.Logger
 
-    CnfObj, err = GetConfObj()
-    if err!=nil {
-        return lg,err
-    }
+		CnfObj, err = GetConfObj()
+		if err != nil {
+			return lg, err
+		}
 
-    lum,open,err := GetLogLum("runed")
-    if err!=nil {
-        return lg,err
-    }
+		lum, open, err := GetLogLum("runed")
+		if err != nil {
+			return lg, err
+		}
 
-    if open>=1 {
-        lg = log.New(lum, "", log.Ldate|log.Lmicroseconds)
-    }else{
-        lg = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
-    }
+		if open >= 1 {
+			lg = log.New(lum, "", log.Ldate|log.Lmicroseconds)
+		} else {
+			lg = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
+		}
+		RunLoger = lg
+	}
 
-    return lg,err
+	return RunLoger, err
 }
 
 //获取web日志对象
 func GetWebLoger() (*log.Logger, error) {
-    var lg *log.Logger
-    var err error
+	var err error
+	if WebLoger == nil {
+		var lg *log.Logger
 
-    CnfObj, err = GetConfObj()
-    if err!=nil {
-        return lg,err
-    }
+		CnfObj, err = GetConfObj()
+		if err != nil {
+			return lg, err
+		}
 
-    lum,open,err := GetLogLum("webac")
-    if err!=nil {
-        return lg,err
-    }
+		lum, open, err := GetLogLum("webac")
+		if err != nil {
+			return lg, err
+		}
 
-    if open>=1 {
-        lg = log.New(lum, "", log.Ldate|log.Lmicroseconds)
-    }else{
-        lg = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
-    }
+		if open >= 1 {
+			lg = log.New(lum, "", log.Ldate|log.Lmicroseconds)
+		} else {
+			lg = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
+		}
+		WebLoger = lg
+	}
 
-    return lg,err 
+	return WebLoger, err
+
 }
 
 //获取错误日志对象
 func GetErrLoger() (*log.Logger, error) {
-    var lg *log.Logger
-    var err error
+	var err error
+	if ErrLoger == nil {
+		var lg *log.Logger
 
-    CnfObj, err = GetConfObj()
-    if err!=nil {
-        return lg,err
-    }
+		CnfObj, err = GetConfObj()
+		if err != nil {
+			return lg, err
+		}
 
-    lum,open,err := GetLogLum("error")
-    if err!=nil {
-        return lg,err
-    }
+		lum, open, err := GetLogLum("error")
+		if err != nil {
+			return lg, err
+		}
 
-    if open>=1 {
-        lg = log.New(lum, "", log.Ldate|log.Lmicroseconds)
-    }else{
-        lg = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
-    }
+		if open >= 1 {
+			lg = log.New(lum, "", log.Ldate|log.Lmicroseconds)
+		} else {
+			lg = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
+		}
+		ErrLoger = lg
+	}
 
-    return lg,err 
+	return ErrLoger, err
 }
