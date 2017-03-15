@@ -7,7 +7,18 @@ import (
     "time"
     "context"
     "syscall"
+    "strings"
 )
+
+//请求日志结构体
+type ReqLog struct {
+    addr string
+    method string
+    url string
+    params string
+    header string
+}
+
 
 //WEB容器
 func WebContainer() {
@@ -70,5 +81,31 @@ func WebContainer() {
 //定义http请求的处理方法
 func WebHandler(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "Hello World, %v\n", time.Now())
+    wlg,_ := GetWebLoger()
+    wlg.Println("accept a new request:", getRequestLog(r))
+    wlg.Println("full log:", r)
+}
 
+//获取完整url
+func getFullUrl(r *http.Request) string {
+    scheme := "http://"
+    if r.TLS != nil {
+        scheme = "https://"
+    }
+
+    return strings.Join([]string{scheme, r.Host, r.RequestURI}, "")
+}
+
+//获取访问日志
+func getRequestLog(r *http.Request) ReqLog {
+    url := getFullUrl(r)
+    log := ReqLog{
+        r.RemoteAddr ,
+        r.Method ,
+        url,
+        "",
+        "",
+    }
+
+    return log
 }
