@@ -31,6 +31,7 @@ func TimerContainer() {
 
         now := time.Now().UnixNano()
         fmt.Println(mt,c, now)
+        rlg.Println(mt, c, now)
         rlg.Println(SERNAME, "定时器运行")
         MainTimer()
     }
