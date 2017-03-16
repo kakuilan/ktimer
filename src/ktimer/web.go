@@ -44,6 +44,8 @@ var ExcParChat = [...]string{
     "/",
     "\"",
     "'",
+    " ",
+    ":",
 }
 
 
@@ -155,23 +157,54 @@ func getHeader(r *http.Request) interface{} {
     return m
 }
 
-//获取参数
+//获取请求参数
 func getRequestParams(r *http.Request) interface{} {
     var pos int
     m := make(map[string] interface{}) 
     
     r.ParseForm()
     for k,v := range r.Form {
-        pos = strings.Index(k, "\"")
+        for _,chr := range ExcParChat {
+            pos = strings.Index(k, chr)
+            if pos!=-1 {
+                break
+            }
+        } 
+
+        if pos!=-1 {
+            continue
+        }
 
         m[k] = v
     }
 
-    for ke,vu := range r.PostForm {
-        m[ke] = vu
+    return m
+}
+
+//获取定时器的参数
+func getTimerParams(r *http.Request) interface{} {
+    var tp TimerParm
+    r.ParseForm()
+
+    if len(r.Form["action"])>0 {
+        tp.Action  = r.Form["action"][0]
+    }
+    if len(r.Form["type"])>0 {
+        tp.Type = r.Form["type"][0]
+    }
+    if len(r.Form["time"])>0 {
+        tp.Time = r.Form["time"][0]
+    }
+    if len(r.Form["limit"])>0 {
+        tp.Limit = r.Form["limit"][0]
+    }
+    if len(r.Form["command"])>0 {
+        tp.Command = r.Form["command"][0]
     }
 
-    return m
+
+
+    return tp
 }
 
 
@@ -179,8 +212,8 @@ func getRequestParams(r *http.Request) interface{} {
 func getRequestLog(r *http.Request) ReqLog {
     url := getFullUrl(r)
     hea := getHeader(r)
-    r.ParseForm()
-    jsonRes,err := json.Marshal(r.Form)
+    params := getRequestParams(r)
+    jsonRes,err := json.Marshal(params)
     par := string(jsonRes)
     if err!= nil{
         par = "params json err"
