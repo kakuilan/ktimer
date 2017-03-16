@@ -20,13 +20,31 @@ type ReqLog struct {
     Header interface{} `json:"header"`
 }
 
-//输出结构
+//输出结构体
 type OutPut struct {
     Status bool `json:"status"`
     Data interface{} `json:"data"`
     Msg string `json:"msg"`
 }
 
+//timer接受参数结构体
+type TimerParm struct {
+    Action string `json:"action"`
+    Type string `json:"type"`
+    Time string `json:"time"`
+    Limit string `json:"limit"`
+    Command string `json:"command"`
+    Key string `json:"key"`
+    Passwd string `json:"passwd"`
+}
+
+//排除的参数字符
+var ExcParChat = [...]string{
+    "\\",
+    "/",
+    "\"",
+    "'",
+}
 
 
 //WEB容器
@@ -90,6 +108,7 @@ func WebContainer() {
 //定义http请求的处理方法
 func WebHandler(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Content-Type", "application/json; charset=UTF-8")
     wlg,_ := GetWebLoger()
     wlg.Println("accept a new request:", getRequestLog(r))
     wlg.Println("full log:", r)
@@ -108,7 +127,9 @@ func WebHandler(w http.ResponseWriter, r *http.Request) {
         fmt.Fprint(w, string(jsonRes))
     }
 
-
+    p := getRequestParams(r)
+    p2,_ := json.Marshal(p)
+    fmt.Fprint(w, string(p2))
 }
 
 //获取完整url
@@ -134,15 +155,42 @@ func getHeader(r *http.Request) interface{} {
     return m
 }
 
+//获取参数
+func getRequestParams(r *http.Request) interface{} {
+    var pos int
+    m := make(map[string] interface{}) 
+    
+    r.ParseForm()
+    for k,v := range r.Form {
+        pos = strings.Index(k, "\"")
+
+        m[k] = v
+    }
+
+    for ke,vu := range r.PostForm {
+        m[ke] = vu
+    }
+
+    return m
+}
+
+
 //获取访问日志
 func getRequestLog(r *http.Request) ReqLog {
     url := getFullUrl(r)
     hea := getHeader(r)
+    r.ParseForm()
+    jsonRes,err := json.Marshal(r.Form)
+    par := string(jsonRes)
+    if err!= nil{
+        par = "params json err"
+    }
+
     log := ReqLog{
         r.RemoteAddr ,
         r.Method ,
         url,
-        "",
+        par,
         hea,
     }
 
