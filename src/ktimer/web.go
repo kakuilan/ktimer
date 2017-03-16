@@ -8,16 +8,25 @@ import (
     "context"
     "syscall"
     "strings"
+    "encoding/json"
 )
 
 //请求日志结构体
 type ReqLog struct {
-    addr string
-    method string
-    url string
-    params string
-    header string
+    Addr string `json:"addr"`
+    Method string `json:"method"`
+    Url string `json:"url"`
+    Params string `json:"params"`
+    Header string `json:"header"`
 }
+
+//输出结构
+type OutPut struct {
+    Status bool `json:"status"`
+    Data interface{} `json:"data"`
+    Msg string `json:"msg"`
+}
+
 
 
 //WEB容器
@@ -80,10 +89,25 @@ func WebContainer() {
 
 //定义http请求的处理方法
 func WebHandler(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, "Hello World, %v\n", time.Now())
     wlg,_ := GetWebLoger()
     wlg.Println("accept a new request:", getRequestLog(r))
     wlg.Println("full log:", r)
+
+    //json
+    webRes := OutPut{
+        Status : true,
+        Data : time.Now(),
+        Msg : "success",
+    }
+    
+    jsonRes,err := json.Marshal(webRes)
+    if err != nil {
+        fmt.Fprintln(w, "json err:", err)
+    }else{
+        fmt.Fprint(w, string(jsonRes))
+    }
+
+
 }
 
 //获取完整url
