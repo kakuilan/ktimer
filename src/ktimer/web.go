@@ -16,8 +16,8 @@ type ReqLog struct {
     Addr string `json:"addr"`
     Method string `json:"method"`
     Url string `json:"url"`
-    Params string `json:"params"`
-    Header string `json:"header"`
+    Params interface{} `json:"params"`
+    Header interface{} `json:"header"`
 }
 
 //输出结构
@@ -89,6 +89,7 @@ func WebContainer() {
 
 //定义http请求的处理方法
 func WebHandler(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Access-Control-Allow-Origin", "*")
     wlg,_ := GetWebLoger()
     wlg.Println("accept a new request:", getRequestLog(r))
     wlg.Println("full log:", r)
@@ -120,15 +121,29 @@ func getFullUrl(r *http.Request) string {
     return strings.Join([]string{scheme, r.Host, r.RequestURI}, "")
 }
 
+//获取头信息
+func getHeader(r *http.Request) interface{} {
+    m := make(map[string] interface{}) 
+    for k,v := range r.Header {
+        key := strings.ToLower(k)
+        if key=="referer" || key== "user-agent" {
+            m[k] = v
+        }
+    }
+
+    return m
+}
+
 //获取访问日志
 func getRequestLog(r *http.Request) ReqLog {
     url := getFullUrl(r)
+    hea := getHeader(r)
     log := ReqLog{
         r.RemoteAddr ,
         r.Method ,
         url,
         "",
-        "",
+        hea,
     }
 
     return log
