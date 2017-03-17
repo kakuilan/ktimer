@@ -130,8 +130,10 @@ func WebHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     p := getRequestParams(r)
+    tp := getTimerParams(r)
     p2,_ := json.Marshal(p)
-    fmt.Fprint(w, string(p2))
+    p3,_ := json.Marshal(tp)
+    fmt.Fprint(w, string(p2), string(p3))
 }
 
 //获取完整url
