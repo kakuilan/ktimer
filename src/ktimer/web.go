@@ -106,34 +106,33 @@ func WebContainer() {
     //os.Exit(0)
 }
 
-
 //定义http请求的处理方法
 func WebHandler(w http.ResponseWriter, r *http.Request) {
-    w.Header().Set("Access-Control-Allow-Origin", "*")
-    w.Header().Set("Content-Type", "application/json; charset=UTF-8")
     wlg,_ := GetWebLoger()
     wlg.Println("accept a new request:", getRequestLog(r))
-    wlg.Println("full log:", r)
 
-    //json
-    webRes := OutPut{
-        Status : true,
-        Data : time.Now(),
-        Msg : "success",
+    p := getRequestParams(r)
+    outputJson(w, true, "success", p)
+}
+
+//输出json
+func outputJson(w http.ResponseWriter,status bool, msg string, data interface{}) {
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+    if data==nil {
+        data = time.Now()
     }
-    
-    jsonRes,err := json.Marshal(webRes)
-    if err != nil {
+    res := OutPut{
+        Status : status,
+        Data : data,
+        Msg : msg,
+    }
+    jsonRes,err := json.Marshal(res)
+    if err!=nil {
         fmt.Fprintln(w, "json err:", err)
     }else{
         fmt.Fprint(w, string(jsonRes))
     }
-
-    p := getRequestParams(r)
-    tp := getTimerParams(r)
-    p2,_ := json.Marshal(p)
-    p3,_ := json.Marshal(tp)
-    fmt.Fprint(w, string(p2), string(p3))
 }
 
 //获取完整url
