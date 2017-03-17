@@ -201,8 +201,12 @@ func getTimerParams(r *http.Request) interface{} {
     if len(r.Form["command"])>0 {
         tp.Command = r.Form["command"][0]
     }
-
-
+    if len(r.Form["key"])>0 {
+        tp.Key = r.Form["key"][0]
+    }
+    if len(r.Form["passwd"])>0 {
+        tp.Passwd = r.Form["passwd"][0]
+    }
 
     return tp
 }
