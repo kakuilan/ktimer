@@ -69,203 +69,197 @@ source ~/.zshrc
 
 源码结构
 src:
-    config
-    ktimer
-    cli
-    log
-    web
+config
+ktimer
+cli
+log
+web
 
-    程序目录:
-        runtime
-        log
-
-
-        redis持久化:
-            all-timer 所有的定时器任务,哈希表
-            second-timer 0~59个秒数的定时器集合,有序集合
-
-            配置
+程序目录:
+runtime
+log
 
 
-            编译go install 
-            http://wiki.jikexueyuan.com/project/go-command-tutorial/0.2.html
-            http://golangtc.com/t/555dc228b09ecc126600001b
-            http://blog.csdn.net/Alsmile/article/details/48290223
-            在环境变量GOPATH中包含多个工作区目录路径时，我们需要在编译命令源码文件前先对环境变量GOBIN进行设置
-            export GOBIN=/root/ktimer/bin
-            cd /root/ktimer/src
-            go install main.go
+redis持久化:
+all-timer 所有的定时器任务,哈希表
+second-timer 0~59个秒数的定时器集合,有序集合
 
-            ------------------------------
-            conf.ini
-
-            [default]
-            #pid文件
-            pidfile = ktimer.pid
-            #最大任务数量
-            task_max_num = 500000
-            #最大任务天数
-            task_max_day = 100
-            #所有任务池缓存key
-            task_pool_key = ktimer:tasks:all
-            #待运转任务缓存key
-            task_trun_key = ktimer:tasks:second
-            #分布式锁key
-            task_lcok_key = ktimer:tasks:lock
-            #任务过期限制.默认执行60秒内的任务,超过则抛弃;为0则不限制,全部执行
-            task_expire_limit = 60
-            #相同定时器的间隔限制.默认10秒内,若有多个相同定时器,只保留最后那个.为0则不限制.
-            task_sametimer_interval = 10
-            #相同断续器的间隔限制.默认0为不允许存在多个相同断续器.
-            task_sameticker_interval = 0
-
-            [web]
-            #是否启用web
-            web.enable = 1
-            #web端口
-            web.port = 9558
-            #web监听IP
-            web.bind_ip = 127.0.0.1
-            #web访问密码
-            web.passwd = eCvN5BxH$bJc
-
-            [redis]
-            redis.host = 127.0.0.1
-            redis.port = 6379
-            redis.db = 1
-            redis.passwd = 
-
-            [log]
-            log.dir = log
-            #日志最大尺寸M
-            log.maxsize = 500
-            #日志最多备份
-            log.maxbackup = 5
-            #日志保留天数
-            log.maxage = 30
-            #错误日志
-            log.error_open = 1
-            log.error_file = error.log
-            #运行日志
-            log.runed_open = 1
-            log.runed_file = runed.log
-            #web日志
-            log.webac_open = 1
-            log.webac_file = webac.log
-            ------------------------------
-            程序命令列表 --新
-            查看帮助
-                ktimer help
-                查看版本号
-                    ktimer version
-                    查看服务状态(是否在运行)
-                        ktimer status
-                        查看运行时服务的信息
-                            ktimer info
-                            安装服务到系统
-                                ktimer install
-                                从系统卸载服务
-                                    ktimer remove
-                                    启动服务
-                                        ktimer start
-                                        停止服务
-                                            ktimer stop
-                                            重启服务
-                                                ktimer restart
-                                                统计当前任务总数
-                                                    ktimer count
-                                                    清空删除所有任务
-                                                        ktimer clear
-                                                        获取任务信息
-                                                            ktimer get 8610014451
-                                                            删除定时任务
-                                                                ktimer del 8610014451
-                                                                加入定时任务
-                                                                    ktimer add -type=timer -time=1 -limit=1 -command="echo -e Hello Ktimer"
-                                                                        ktimer add -type=ticker -time=1 -limit=0 -command="date --rfc-3339=ns"
-                                                                        更新定时任务
-                                                                            ktimer update -key=8610014451 -time=5 -limit=6
-                                                                            ----------------------------------------------
-                                                                            流程:
-                                                                                Init()
-                                                                                1. 检查是否有配置文件
-                                                                                2. 检查redis是否连接
-                                                                                3. 检查日志目录是否可写
-                                                                                4. 检查pid
-
-                                                                                #默认任务
-                                                                                [task]
-                                                                                default_timer = echo -e Hello Ktimer
-                                                                                default_ticker = date --rfc-3339=ns
-                                                                                任务key = md5(具体任务)+':'+时间
-                                                                                key=>{
-                                                                                    'type' : '定时器类型:timer/ticker',
-                                                                                    'time' : '间隔秒数或时间戳',
-                                                                                    'limit' : '执行次数限制',
-                                                                                    'command' : '任务的具体命令',
-                                                                                    'run_num' : '已执行次数',
-                                                                                    'run_lasttime' : '上次执行时间',
-                                                                                    'run_nexttime' : '下次执行时间',
-
-                                                                                }
-
-                                                                                ./main add -type="ticker" -time=5 -limit=3 -command="date --rfc-3339=ns" abc="x*y=z" efg
-
-                                                                                WEB端: action包括help/version/info/count/clear/get/del/update
-                                                                                返回json:
-                                                                                    {
-                                                                                            "status" : "处理状态:true,false",
-                                                                                            "data" : "具体数据",
-                                                                                            "msg" : "提示信息",
-
-                                                                                    }
+配置
 
 
-                                                                                    -----------------------------------------
-                                                                                    函数
+编译go install 
+http://wiki.jikexueyuan.com/project/go-command-tutorial/0.2.html
+http://golangtc.com/t/555dc228b09ecc126600001b
+http://blog.csdn.net/Alsmile/article/details/48290223
+在环境变量GOPATH中包含多个工作区目录路径时，我们需要在编译命令源码文件前先对环境变量GOBIN进行设置
+export GOBIN=/root/ktimer/bin
+cd /root/ktimer/src
+go install main.go
 
-                                                                                    获取系统时间戳限制
-                                                                                    GetSysTimestampLimit() maxSeconds,maxTimestamp
+------------------------------
+conf.ini
 
-                                                                                    生成定时器ID
-                                                                                    MakeTimerId([]byte command) uint32 
+[default]
+#pid文件
+pidfile = ktimer.pid
+#最大任务数量
+task_max_num = 500000
+#最大任务天数
+task_max_day = 100
+#所有任务池缓存key
+task_pool_key = ktimer:tasks:all
+#待运转任务缓存key
+task_trun_key = ktimer:tasks:second
+#分布式锁key
+task_lcok_key = ktimer:tasks:lock
+#任务过期限制.默认执行60秒内的任务,超过则抛弃;为0则不限制,全部执行
+task_expire_limit = 60
+#相同定时器的间隔限制.默认10秒内,若有多个相同定时器,只保留最后那个.为0则不限制.
+task_sametimer_interval = 10
+#相同断续器的间隔限制.默认0为不允许存在多个相同断续器.
+task_sameticker_interval = 0
+
+[web]
+#是否启用web
+web.enable = 1
+#web端口
+web.port = 9558
+#web监听IP
+web.bind_ip = 127.0.0.1
+#web访问密码
+web.passwd = eCvN5BxH$bJc
+
+[redis]
+redis.host = 127.0.0.1
+redis.port = 6379
+redis.db = 1
+redis.passwd = 
+
+[log]
+log.dir = log
+#日志最大尺寸M
+log.maxsize = 500
+#日志最多备份
+log.maxbackup = 5
+#日志保留天数
+log.maxage = 30
+#错误日志
+log.error_open = 1
+log.error_file = error.log
+#运行日志
+log.runed_open = 1
+log.runed_file = runed.log
+#web日志
+log.webac_open = 1
+log.webac_file = webac.log
+------------------------------
+程序命令列表 --新
+查看帮助
+ktimer help
+查看版本号
+ktimer version
+查看服务状态(是否在运行)
+ktimer status
+查看运行时服务的信息
+ktimer info
+安装服务到系统
+ktimer install
+从系统卸载服务
+ktimer remove
+启动服务
+ktimer start
+停止服务
+ktimer stop
+重启服务
+ktimer restart
+统计当前任务总数
+ktimer count
+清空删除所有任务
+ktimer clear
+获取任务信息
+ktimer get 8610014451
+删除定时任务
+ktimer del 8610014451
+加入定时任务
+ktimer add -type=timer -time=1 -limit=1 -command="echo -e Hello Ktimer"
+ktimer add -type=ticker -time=1 -limit=0 -command="date --rfc-3339=ns"
+更新定时任务
+ktimer update -key=8610014451 -time=5 -limit=6
+----------------------------------------------
+流程:
+Init()
+1. 检查是否有配置文件
+2. 检查redis是否连接
+3. 检查日志目录是否可写
+4. 检查pid
+
+#默认任务
+[task]
+default_timer = echo -e Hello Ktimer
+default_ticker = date --rfc-3339=ns
+任务key = md5(具体任务)+':'+时间
+key=>{
+'type' : '定时器类型:timer/ticker',
+'time' : '间隔秒数或时间戳',
+'limit' : '执行次数限制',
+'command' : '任务的具体命令',
+'run_num' : '已执行次数',
+'run_lasttime' : '上次执行时间',
+'run_nexttime' : '下次执行时间',
+
+}
+
+./main add -type="ticker" -time=5 -limit=3 -command="date --rfc-3339=ns" abc="x*y=z" efg
+
+WEB端: action包括help/version/info/count/clear/get/del/update
+返回json:
+{
+		"status" : "处理状态:true,false",
+		"data" : "具体数据",
+		"msg" : "提示信息",
+
+}
 
 
+-----------------------------------------
+函数
 
+获取系统时间戳限制
+GetSysTimestampLimit() maxSeconds,maxTimestamp
 
-                                                                                    -----------------------------------------
-                                                                                    插件
-
-                                                                                    git clone https://github.com/takama/daemon.git
-                                                                                    go get github.com/takama/daemon
-                                                                                    cd daemon/example/
-                                                                                    vi myservice.go
-                                                                                    var dependencies = []string{"dummy.service"}改成var dependencies = []string{"myservice.service"}
-                                                                                    他是用systemd做daemon,这个只对coredump，kill-9会拉起程序，kill时不会拉起，要运维注意
-                                                                                    go build myservice.go
-
-
-                                                                                    git clone https://github.com/sevlyar/go-daemon.git
-                                                                                    go get github.com/sevlyar/go-daemon
-                                                                                    cd go-daemon/sample/
-
-
-
-                                                                                    git clone https://github.com/VividCortex/godaemon.git
-                                                                                    go get github.com/VividCortex/godaemon
-
-                                                                                    import "gopkg.in/natefinch/lumberjack.v2"
-                                                                                    go get gopkg.in/natefinch/lumberjack.v2
-
-                                                                                    git clone https://github.com/spaolacci/murmur3.git
-                                                                                    go get github.com/spaolacci/murmur3
-                                                                                    -----------------------------------------
+生成定时器ID
+MakeTimerId([]byte command) uint32 
 
 
 
 
+-----------------------------------------
+插件
+
+git clone https://github.com/takama/daemon.git
+go get github.com/takama/daemon
+cd daemon/example/
+vi myservice.go
+var dependencies = []string{"dummy.service"}改成var dependencies = []string{"myservice.service"}
+他是用systemd做daemon,这个只对coredump，kill-9会拉起程序，kill时不会拉起，要运维注意
+go build myservice.go
 
 
+git clone https://github.com/sevlyar/go-daemon.git
+go get github.com/sevlyar/go-daemon
+cd go-daemon/sample/
+
+
+
+git clone https://github.com/VividCortex/godaemon.git
+go get github.com/VividCortex/godaemon
+
+import "gopkg.in/natefinch/lumberjack.v2"
+go get gopkg.in/natefinch/lumberjack.v2
+
+git clone https://github.com/spaolacci/murmur3.git
+go get github.com/spaolacci/murmur3
+-----------------------------------------
 
 
 
