@@ -170,3 +170,29 @@ func GetErrLoger() (*log.Logger, error) {
 
 	return ErrLoger, err
 }
+
+//记录服务信息日志
+func LogService(v ...interface{}) {
+    lg,_ := GetSerLoger()
+    lg.Println(v ...)
+}
+
+//记录WEB信息日志
+func LogWebes(v ...interface{}) {
+    lg,_ := GetWebLoger()
+    lg.Println(v ...)
+}
+
+
+//记录运行信息日志
+func LogRunes(v ...interface{}) {
+    lg,_ := GetRunLoger()
+    lg.Println(v ...)
+}
+
+//记录错误信息日志
+func LogErres(v ...interface{}) {
+    lg,_ := GetErrLoger()
+    lg.Println(v ...)
+} 
+

@@ -14,6 +14,23 @@ const (
 	AUTHOR  = "kakuilan@163.com"
 )
 
+//定时器数据结构
+type KtimerData struct {
+    Type string `json:"type"`
+    Time int `json:"time"`
+    Limit int `json:"limit"`
+    Command string `json:"command"`
+}
+
+//定时任务详情结构
+type KtaskDetail struct {
+    KtimerData
+    Run_num int `json:"run_num"`
+    Run_lasttime  float32 `json:"run_lasttime"`
+    Run_nexttime float32 `json:"run_nexttime"`
+}
+
+
 //定时器容器
 func TimerContainer() {
     rlg,_ := GetRunLoger()

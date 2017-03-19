@@ -108,11 +108,24 @@ func WebContainer() {
 
 //定义http请求的处理方法
 func WebHandler(w http.ResponseWriter, r *http.Request) {
-    wlg,_ := GetWebLoger()
-    wlg.Println("accept a new request:", getRequestLog(r))
+    var err error
+    LogWebes("accept a new request:", getRequestLog(r)) 
 
-    p := getRequestParams(r)
-    outputJson(w, true, "success", p)
+    //检查密码是否正确
+    timPar := getTimerParams(r)
+    CnfObj, err = GetConfObj()
+    if err!=nil {
+        LogWebes("web server accept request has err:", err)
+        outputJson(w, false, "web server has error.", "")
+    }
+    pwd := CnfObj.String("web::web.passwd")
+    if(timPar.Passwd != pwd) {
+        outputJson(w, false, "You are not authorized to access", "")
+    }else{
+        allPar := getRequestParams(r)
+        outputJson(w, true, "success", allPar)
+        
+    }
 }
 
 //输出json
@@ -183,7 +196,7 @@ func getRequestParams(r *http.Request) interface{} {
 }
 
 //获取定时器的参数
-func getTimerParams(r *http.Request) interface{} {
+func getTimerParams(r *http.Request) TimerParm {
     var tp TimerParm
     r.ParseForm()
 

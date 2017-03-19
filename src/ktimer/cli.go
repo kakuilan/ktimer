@@ -139,3 +139,9 @@ func CatchCli() {
 	}
 
 }
+
+//解析CLI下Add的相关参数
+func ParseAddCliArgs() {
+    
+}
+
