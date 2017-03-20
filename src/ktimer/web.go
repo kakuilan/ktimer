@@ -62,6 +62,8 @@ func WebContainer() {
     open,err := CnfObj.Int("web::web.enable")
     if err!=nil {
         ServiceError("web server get conf fail.", err)
+    }else if open<1{
+        LogService("web server is setting close.", open)
     }else{
         port,err := CnfObj.Int("web::web.port")
         if err!= nil {
@@ -70,8 +72,8 @@ func WebContainer() {
         bind_ip := CnfObj.String("web::web.bind_ip")
         passwd := CnfObj.String("web::web.passwd")
         portdesc := ":"+fmt.Sprint(port)
-        fmt.Println(333, open,port,bind_ip,passwd, portdesc)
-        
+        LogService("web server listen to:", bind_ip, passwd)
+
         //注册http请求的处理方法
         http.HandleFunc("/", WebHandler)
         srv := &http.Server{
@@ -81,11 +83,10 @@ func WebContainer() {
             WriteTimeout: 10 * time.Second,
             MaxHeaderBytes: 1 << 20,
         }
-        slg,_ := GetSerLoger()
 
         go func(){
             //启动http服务
-            slg.Println("web server starting...")
+            LogWebes("web server starting...")
             if err := srv.ListenAndServe(); err!=nil {
                 ServiceError("web server start listen fail.", err)
             }
@@ -96,11 +97,11 @@ func WebContainer() {
         signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM)
         <-stopChan
         msg = "shutting down web server..."
-        slg.Println(msg)
+        LogWebes(msg)
         ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
         srv.Shutdown(ctx)
         msg = "web server gracefully stopped."
-        slg.Println(msg)
+        LogWebes(msg)
     }
 
     //os.Exit(0)

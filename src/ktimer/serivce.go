@@ -136,17 +136,11 @@ func CheckPidFile() (string, error) {
 	return pidfile, err
 }
 
-//服务日志
-func ServiceLog(msg string, err error) {
-	lg, _ := GetSerLoger()
-	lg.Println(msg, err)
-}
 
 //服务错误处理
 func ServiceError(msg string, err error) {
-	el, _ := GetErrLoger()
-	el.Println(msg, err)
-	if err != nil {
+    LogErres(msg,err)
+    if err != nil {
 		fmt.Println(msg, err)
 		os.Exit(1)
 	} else {
@@ -157,10 +151,9 @@ func ServiceError(msg string, err error) {
 
 //服务异常处理
 func ServiceException() {
-	el, _ := GetErrLoger()
 	if err := recover(); err != nil {
 		fmt.Println(err)
-		el.Println(err)
+		LogErres(err)
 		os.Exit(1)
 	}
 }
@@ -223,7 +216,7 @@ func ServiceInstall() {
 		ServiceError("service install fail.", err)
 	}
 	fmt.Println(status)
-	ServiceLog("service install success.", nil)
+    LogService("service install success.")
 }
 
 //卸载服务
@@ -235,7 +228,7 @@ func ServiceRemove() {
 		ServiceError("service remove fail.", err)
 	}
 	fmt.Println(status)
-	ServiceLog("service remove success.", nil)
+	LogService("service remove success.")
 }
 
 //启动服务
@@ -248,7 +241,7 @@ func ServiceStart() {
 	chk, _ = PidIsActive(serPidno)
 	if chk {
 		msg = fmt.Sprintf("service [%d] is running,start fail.", serPidno)
-		ServiceLog(msg, nil)
+		LogService(msg)
 		fmt.Println(msg)
 		os.Exit(0)
 	}
@@ -259,7 +252,7 @@ func ServiceStart() {
 		ServiceError("service start fail.", err)
 	}
 	fmt.Println(status)
-	ServiceLog("service start success.", nil)
+	LogService("service start success.")
 }
 
 //停止服务
@@ -297,7 +290,7 @@ func ServiceStop() {
 	}
 
 	fmt.Println(status)
-	ServiceLog("service stop success.", nil)
+	LogService("service stop success.")
 }
 
 //查看服务状态
@@ -313,10 +306,10 @@ func ServiceStatus() {
 
 //重启服务
 func ServiceRestart() {
-	ServiceLog("service restart begining...", nil)
+	LogService("service restart begining...")
 	ServiceStop()
 	ServiceStart()
-	ServiceLog("service restart success.", nil)
+	LogService("service restart success.")
 }
 
 //主体服务
@@ -345,7 +338,7 @@ func ServiceMain() {
 	SetCurrentServicePid(ServPidno)
 
 	msg = fmt.Sprintf("main service run success[%d].", ServPidno)
-	ServiceLog(msg, nil)
+	LogService(msg)
 	fmt.Println(msg)
 	TimerContainer()
 	WebContainer()
