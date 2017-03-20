@@ -72,7 +72,7 @@ func WebContainer() {
         bind_ip := CnfObj.String("web::web.bind_ip")
         passwd := CnfObj.String("web::web.passwd")
         portdesc := ":"+fmt.Sprint(port)
-        LogService("web server listen to:", bind_ip, passwd)
+        LogService("web server listen to:", bind_ip, portdesc, passwd)
 
         //注册http请求的处理方法
         http.HandleFunc("/", WebHandler)
