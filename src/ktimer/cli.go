@@ -131,6 +131,14 @@ func CatchCli() {
 			//TODO
 		case "add":
 			//TODO
+            test := KtimerData{
+                "timer",
+                1,
+                1,
+                "echo -e Hello Ktimer",
+            }
+            res,err := AddTimer(test)
+            fmt.Println(res, err)
 		case "update":
 			//TODO
 		}

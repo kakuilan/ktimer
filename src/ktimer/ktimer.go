@@ -1,77 +1,112 @@
 package ktimer
 
 import (
-    "fmt"
-    "time"
+	"errors"
+	"fmt"
+	"time"
 )
 
 const (
-    SERNAME = "ktimer"
-    SERDESC = "Ktimer Service"
-    PRODESC = "Ktimer is a simple timer/ticker task manager by golang."
+	SERNAME = "ktimer"
+	SERDESC = "Ktimer Service"
+	PRODESC = "Ktimer is a simple timer/ticker task manager by golang."
 	VERSION = "0.0.1"
-    PUBDATE = "2017.3"
+	PUBDATE = "2017.3"
 	AUTHOR  = "kakuilan@163.com"
 )
 
 //定时器数据结构
 type KtimerData struct {
-    Type string `json:"type"`
-    Time int `json:"time"`
-    Limit int `json:"limit"`
-    Command string `json:"command"`
+	Type    string `json:"type"`
+	Time    int    `json:"time"`
+	Limit   int    `json:"limit"`
+	Command string `json:"command"`
 }
 
 //定时任务详情结构
 type KtaskDetail struct {
-    KtimerData
-    Run_num int `json:"run_num"`
-    Run_lasttime  float32 `json:"run_lasttime"`
-    Run_nexttime float32 `json:"run_nexttime"`
+	KtimerData
+	Run_num      int     `json:"run_num"`
+	Run_lasttime float32 `json:"run_lasttime"`
+	Run_nexttime float32 `json:"run_nexttime"`
 }
-
 
 //定时器容器
 func TimerContainer() {
-    rlg,_ := GetRunLoger()
-    elg,_ := GetErrLoger()
-    go func(){
-        
-    mt := time.Tick(time.Millisecond * 500)
-    for c := range mt {
-        pidno,_ := GetServicePidNo()
-        servpidno := GetCurrentServicePid()
-        if pidno!=servpidno{
-            msg := fmt.Sprintf("check pid exception,service [%d] stopped.", servpidno)
-            elg.Println(msg)
-        }
+	rlg, _ := GetRunLoger()
+	elg, _ := GetErrLoger()
+	go func() {
 
-        now := time.Now().UnixNano()
-        fmt.Println(mt,c, now)
-        rlg.Println(mt, c, now)
-        rlg.Println(SERNAME, "定时器运行")
-        MainTimer()
-    }
-    }()
-    
+		mt := time.Tick(time.Millisecond * 500)
+		for c := range mt {
+			pidno, _ := GetServicePidNo()
+			servpidno := GetCurrentServicePid()
+			if pidno != servpidno {
+				msg := fmt.Sprintf("check pid exception,service [%d] stopped.", servpidno)
+				elg.Println(msg)
+			}
+
+			now := time.Now().UnixNano()
+			fmt.Println(mt, c, now)
+			rlg.Println(mt, c, now)
+			rlg.Println(SERNAME, "定时器运行")
+			MainTimer()
+		}
+	}()
+
 }
 
 //主体定时器
-func MainTimer() (bool,error) {
-    var res bool = false
-    var err error
+func MainTimer() (bool, error) {
+	var res bool = false
+	var err error
 
-    return res,err
+	return res, err
 }
 
 //加入定时器
-func AddTimer() {
+func AddTimer(td KtimerData) (bool, error) {
+	var res bool
+	var err error
 
+	if td.Command == "" {
+		err = errors.New("command is empty")
+		return res, err
+	}
+
+	if td.Type != "timer" && td.Type != "ticker" {
+		err = errors.New("type is error")
+		return res, err
+	}
+
+	if td.Time <= 0 {
+		td.Time = 5
+	}
+
+	if td.Limit < 0 && td.Type == "timer" {
+		td.Limit = 1
+	} else if td.Limit < 0 && td.Type == "ticker" {
+		td.Limit = 0
+	}
+
+	//定时器详情
+	detail := KtaskDetail{
+		td,
+		0,
+		0.0,
+		0.0,
+	}
+    detail.Time = 5
+
+
+	fmt.Println(detail)
+
+	return res, err
 }
 
 //更新定时器
 func UpdateTimer() {
-    
+
 }
 
 //获取定时器
@@ -96,12 +131,28 @@ func ClearTimer() {
 
 //执行定时器秒任务
 func RunSecondTask() {
-    
+
 }
 
 //执行具体任务
 func RunDetailTask() {
-    
+
 }
 
+//从配置获取最大秒数
+func GetMaxsecond() (int, error) {
+	var err error
+	var maxSec, maxDay int
+	CnfObj, err = GetConfObj()
+	if err != nil {
+		return maxSec, err
+	}
 
+	maxDay, err = CnfObj.Int("task_max_day")
+	if err != nil {
+		return maxSec, err
+	}
+
+	maxSec = maxDay * 86400
+	return maxSec, err
+}

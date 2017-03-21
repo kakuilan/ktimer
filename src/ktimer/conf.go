@@ -24,7 +24,7 @@ task_max_day = 100
 task_pool_key = ktimer:tasks:all
 #待运转任务缓存key
 task_trun_key = ktimer:tasks:second
-#分布式锁key
+#任务锁key
 task_lcok_key = ktimer:tasks:lock
 #任务过期限制.默认执行60秒内的任务,超过则抛弃;为0则不限制,全部执行
 task_expire_limit = 60
@@ -52,7 +52,7 @@ redis.passwd =
 [log]
 log.dir = log
 #日志最大尺寸M
-log.maxsize = 1
+log.maxsize = 500
 #日志最多备份
 log.maxbackup = 5
 #日志保留天数
