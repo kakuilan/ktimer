@@ -140,7 +140,7 @@ func RunDetailTask() {
 }
 
 //从配置获取最大秒数
-func GetMaxsecond() (int, error) {
+func GetMaxSeconds() (int, error) {
 	var err error
 	var maxSec, maxDay int
 	CnfObj, err = GetConfObj()
