@@ -98,10 +98,22 @@ func AddTimer(td KtimerData) (bool, error) {
 	}
     detail.Time = 5
 
+    maxSeconds,maxTimestamp,err := GetSysTimestampLimit()
+    if err !=nil {
+        err = errors.New("conf task_max_day is error")
+        return res, err
+    }
 
-	fmt.Println(detail)
+
+    ts := time.Now().Unix()
+	fmt.Println(detail, ts, maxSeconds, maxTimestamp)
+    fmt.Printf("%T\n", ts)
 
 	return res, err
+}
+
+func ReaddTimer() {
+
 }
 
 //更新定时器
@@ -140,19 +152,20 @@ func RunDetailTask() {
 }
 
 //从配置获取最大秒数
-func GetMaxSeconds() (int, error) {
+func GetSysTimestampLimit() (int, int, error) {
 	var err error
-	var maxSec, maxDay int
+	var maxSec,maxTim,maxDay int
 	CnfObj, err = GetConfObj()
 	if err != nil {
-		return maxSec, err
+		return maxSec,maxTim,err
 	}
 
 	maxDay, err = CnfObj.Int("task_max_day")
 	if err != nil {
-		return maxSec, err
+		return maxSec,maxTim,err
 	}
 
 	maxSec = maxDay * 86400
-	return maxSec, err
+    maxTim = int(time.Now().Unix()) + maxSec
+	return maxSec,maxTim,err
 }
