@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+    "murmur3"
 )
 
 const (
@@ -168,4 +169,11 @@ func GetSysTimestampLimit() (int, int, error) {
 	maxSec = maxDay * 86400
     maxTim = int(time.Now().Unix()) + maxSec
 	return maxSec,maxTim,err
+}
+
+//生成定时器ID
+func MakeTimerId(command string) uint32 {
+    key := []byte(command)
+    id := murmur3.Sum32(key)
+    return id
 }
