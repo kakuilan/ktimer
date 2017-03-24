@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+    "strconv"
     "murmur3"
 )
 
@@ -177,3 +178,26 @@ func MakeTimerId(command string) uint32 {
     id := murmur3.Sum32(key)
     return id
 }
+
+//获取主秒数
+func GetMainSecond(t interface{}) int {
+   var newTime int
+   switch v := t.(type) {
+    case interface{} :
+        newTime = 1
+   case string :
+        newTime,_ = strconv.Atoi(t)
+    case int :
+        newTime = t
+    case float32 :
+        newTime = int(t)
+    case float64 :
+        newTime = int(t)
+    default :
+        newTime = 1
+   }
+
+   return newTime
+}
+
+
