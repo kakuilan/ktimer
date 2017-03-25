@@ -59,7 +59,7 @@ log.maxbackup = 5
 log.maxage = 30
 #服务日志
 log.serve_open = 1
-log.serve_file = error.log
+log.serve_file = serve.log
 #错误日志
 log.error_open = 1
 log.error_file = error.log
