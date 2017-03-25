@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"murmur3"
-	"strconv"
 	"time"
+	"github.com/shopspring/decimal"
 )
 
 const (
@@ -110,6 +110,11 @@ func AddTimer(td KtimerData) (bool, error) {
 	fmt.Println(detail, ts, maxSeconds, maxTimestamp)
 	fmt.Printf("%T\n", ts)
 
+	aa := 23412.443
+	bb := GetMainSecond(aa)
+	fmt.Println("res:", aa, bb)
+
+
 	return res, err
 }
 
@@ -180,21 +185,41 @@ func MakeTimerId(command string) uint32 {
 
 //获取主秒数
 func GetMainSecond(t interface{}) int {
-	var newTime int
-	switch v := t.(type) {
-	case interface{}:
-		newTime = 1
-	case string:
-		newTime, _ = strconv.Atoi(t)
-	case int:
-		newTime = t
-	case float32:
-		newTime = int(t)
-	case float64:
-		newTime = int(t)
-	default:
-		newTime = 1
+	var res int 
+    var mst int64
+	var dec decimal.Decimal
+
+	switch t.(type) {
+		case int :
+			tmp,_ := t.(int)
+			mst = int64(tmp)
+			dec = decimal.New(mst, 1)
+		case int32 :
+			tmp,_ := t.(int32)
+			mst = int64(tmp)
+			dec = decimal.New(mst, 0)
+		case int64 :
+			tmp,_ := t.(int64)
+			mst = int64(tmp)
+			dec = decimal.New(mst, 0)
+		case float32 :
+			tmp,_ := t.(float32)
+			flo := float64(tmp)
+			dec = decimal.NewFromFloat(flo)
+		case float64 :
+			flo,_ := t.(float64)
+			dec = decimal.NewFromFloat(flo)
+		case string :
+			tmp,_ := t.(string)
+			dec,_ = decimal.NewFromString(tmp)
+		default :
+			res = 1
 	}
 
-	return newTime
+	if res!=1 {
+		rem := dec.Mod(decimal.New(60, 0)).IntPart()
+		res = int(rem)
+	}
+
+	return res
 }

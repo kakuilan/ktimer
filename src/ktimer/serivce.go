@@ -6,7 +6,7 @@ import (
 	//"config"
 	"errors"
 	"github.com/takama/daemon"
-	"gopkg.in/redis.v5"
+	"github.com/go-redis/redis"
 	"os"
 	"strings"
 )
