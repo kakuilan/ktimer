@@ -70,6 +70,32 @@ func CheckRedis() (bool, error) {
 	return true, err
 }
 
+//检查运行时目录
+func CheckRuntimedir() (string,error) {
+	var rundir string
+	var err error
+
+	currdir := GetCurrentDirectory()
+	rundir = currdir +"/runtime"
+	direxis := FileExist(rundir)
+	if !direxis {
+		err = os.MkdirAll(rundir, 0766)
+		if err !=nil {
+			err = errors.New("failed to create runtime directiory:"+ rundir)
+			return rundir,err
+		}
+	}else{
+		write := Writeable(rundir)
+		err = os.Chmod(rundir, 0766)
+		if !write || err!=nil {
+			err = errors.New("runtime dir cannot write:" +rundir)
+			return rundir,err
+		}
+	}
+
+	return rundir,err
+}
+
 //检查日志目录
 func CheckLogdir() (string, error) {
 	var err error
@@ -183,7 +209,13 @@ func ServiceInit() {
 	//检查日志目录
 	_, err = CheckLogdir()
 	if err != nil {
-		ServiceError("check log`s dir has error:`", err)
+		ServiceError("check log`s dir has error:", err)
+	}
+
+	//检查运行时目录
+	_,err = CheckRuntimedir()
+	if err!=nil {
+		ServiceError("check runtime dir has error:", err)
 	}
 
 	//检查pid
@@ -237,6 +269,7 @@ func ServiceStart() {
 	var msg string
 
 	ServiceInit()
+
 	serPidno, _ := GetServicePidNo()
 	chk, _ = PidIsActive(serPidno)
 	if chk {
