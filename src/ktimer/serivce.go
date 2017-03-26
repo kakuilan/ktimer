@@ -306,6 +306,7 @@ func ServiceStatus() {
 
 //重启服务
 func ServiceRestart() {
+	ServiceInit()
 	LogService("service restart begining...")
 	ServiceStop()
 	ServiceStart()
