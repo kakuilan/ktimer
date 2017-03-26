@@ -43,7 +43,7 @@ func TimerContainer() {
 		for c := range mt {
 			pidno, _ := GetServicePidNo()
 			servpidno := GetCurrentServicePid()
-			if pidno != servpidno {
+			if pidno>0 && pidno != servpidno {
 				msg := fmt.Sprintf("check pid exception,service [%d] stopped.", servpidno)
 				elg.Println(msg)
 			}

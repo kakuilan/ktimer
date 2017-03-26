@@ -148,7 +148,7 @@ func CheckPidFile() (string, error) {
 
 	pidfile = strings.Replace(pidfile, "\\", "/", -1)
 	pos := strings.Index(pidfile, "/")
-	if pos == -1 {
+	if pos == -1 || pos!=0 {
 		currdir := GetCurrentDirectory()
 		pidfile = currdir + "/" + strings.TrimRight(pidfile, "/")
 	}
@@ -219,12 +219,11 @@ func ServiceInit() {
 	}
 
 	//检查pid
-	_, err = CheckPidFile()
+	pidf, err := CheckPidFile()
 	if err != nil {
-		ServiceError("check pid has error:", err)
+		ServiceError("check pid has error:" +pidf, err)
 	}
 
-	fmt.Println("CnfObj", CnfObj)
 }
 
 //获取守护进程的服务对象
@@ -293,16 +292,18 @@ func ServiceStop() {
 	ServiceInit()
 	var status string
 	var err error
+	var chk bool
+
 	//先检查是否在运行
 	status = "service is stopped."
-	serPidno, _ := GetServicePidNo()
-	chk, _ := PidIsActive(serPidno)
-	if chk {
+	serPidno,_ := GetServicePidNo()
+	chk, _ = PidIsActive(serPidno)
+	if serPidno==0 || chk {
 		service, _ := GetDaemon()
 		status, err = service.Stop()
-		if err != nil {
-			serProcess, err2 := os.FindProcess(serPidno)
-			if err2 != nil {
+		if err != nil && serPidno>0 {
+			serProcess, err := os.FindProcess(serPidno)
+			if err != nil {
 				ServiceError("service stop fail.", err)
 			}
 			if err = serProcess.Kill(); err != nil {
@@ -313,10 +314,10 @@ func ServiceStop() {
 
 		//删除pid
 		pidfile, err := CheckPidFile()
-		if err == nil {
+		if FileExist(pidfile) && err == nil {
 			err = os.Remove(pidfile)
 			if err != nil {
-				ServiceError("pid file remove error.", err)
+				LogErres(err)
 			}
 		}
 

@@ -15,7 +15,7 @@ import (
 const DEFAULT_CONF = `
 [default]
 #pid文件
-pidfile = ktimer.pid
+pidfile = runtime/ktimer.pid
 #最大任务数量
 task_max_num = 500000
 #最大任务天数
