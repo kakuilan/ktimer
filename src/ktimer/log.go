@@ -161,9 +161,9 @@ func GetErrLoger() (*log.Logger, error) {
 		}
 
 		if open >= 1 {
-			lg = log.New(lum, "", log.Ldate|log.Lmicroseconds)
+			lg = log.New(lum, "", log.Ldate|log.Llongfile|log.Lmicroseconds)
 		} else {
-			lg = log.New(os.Stdout, "", log.Ldate|log.Lmicroseconds)
+			lg = log.New(os.Stdout, "", log.Ldate|log.Llongfile|log.Lmicroseconds)
 		}
 		ErrLoger = lg
 	}
