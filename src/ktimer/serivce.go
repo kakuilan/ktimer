@@ -9,6 +9,7 @@ import (
 	"github.com/go-redis/redis"
 	"os"
 	"strings"
+//    "encoding/json"
 )
 
 //定义KT服务类型
@@ -283,6 +284,17 @@ func ServiceStart() {
 	if err != nil {
 		ServiceError("service start fail.", err)
 	}
+
+    //保存当前运行的配置
+    rundir,_ := CheckRuntimedir()
+    if curCnf,err := os.OpenFile(rundir+"/runcnf", os.O_RDWR|os.O_CREATE, 0600); err!=nil {
+        LogService("save run conf fail.", err)
+    }else{
+        cnfobj,_ := GetConfObj()
+        str := fmt.Sprint(cnfobj)
+        curCnf.Write([]byte(str))
+    }
+
 	fmt.Println(status)
 	LogService("service start success.")
 }
