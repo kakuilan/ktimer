@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"murmur3"
 	"time"
-	"github.com/shopspring/decimal"
+    "math"
+    "github.com/shopspring/decimal"
 )
 
 const (
@@ -29,8 +30,8 @@ type KtimerData struct {
 type KtaskDetail struct {
 	KtimerData
 	Run_num      int     `json:"run_num"`
-	Run_lasttime float32 `json:"run_lasttime"`
-	Run_nexttime float32 `json:"run_nexttime"`
+	Run_lasttime float64 `json:"run_lasttime"`
+	Run_nexttime float64 `json:"run_nexttime"`
 }
 
 //定时器容器
@@ -100,19 +101,22 @@ func AddTimer(td KtimerData) (bool, error) {
 	}
 	detail.Time = 5
 
+    
+
 	maxSeconds, maxTimestamp, err := GetSysTimestampLimit()
 	if err != nil {
 		err = errors.New("conf task_max_day is error")
 		return res, err
 	}
 
-	ts := time.Now().Unix()
-	fmt.Println(detail, ts, maxSeconds, maxTimestamp)
-	fmt.Printf("%T\n", ts)
+    tm_sec,tm_mic := GetCurrentTime()
+    fmt.Printf("GetCurrentTime: %d %10.6f \n", tm_sec, tm_mic)
 
-	aa := 23412.443
-	bb := GetMainSecond(aa)
-	fmt.Println("res:", aa, bb)
+	ts := time.Now().Unix()
+    tc := time.Now().UnixNano()
+    mas := GetMainSecond(tm_mic)
+    fmt.Println("detail:", detail, ts, tc, mas, maxSeconds, maxTimestamp)
+
 
 
 	return res, err
@@ -222,4 +226,20 @@ func GetMainSecond(t interface{}) int {
 	}
 
 	return res
+}
+
+
+//获取当前时间
+func GetCurrentTime() (int,float64) {
+    var sec int
+    var mic float64
+
+    sec = int(time.Now().Unix())
+    pn := math.Pow10(9)
+    dic_pn := decimal.NewFromFloat(pn)
+    dic_ms := decimal.New(time.Now().UnixNano(), 0)
+    dic_ms = dic_ms.DivRound(dic_pn, 6)
+    mic,_ = dic_ms.Float64()
+
+    return sec,mic
 }
