@@ -135,6 +135,7 @@ func AddTimer(td KtimerData) (bool, error) {
 	return res, err
 }
 
+//重新添加定时器任务
 func ReaddTimer() {
 
 }
@@ -193,12 +194,6 @@ func GetSysTimestampLimit() (int, int, error) {
 	return maxSec, maxTim, err
 }
 
-//生成定时器ID
-func MakeTimerId(command string) uint32 {
-	key := []byte(command)
-	id := murmur3.Sum32(key)
-	return id
-}
 
 //获取主秒数
 func GetMainSecond(t interface{}) int {
@@ -255,4 +250,29 @@ func GetCurrentTime() (int,float64) {
     mic,_ = dic_ms.Float64()
 
     return sec,mic
+}
+
+//生成定时器ID
+func MakeTimerId(command string, ttype string, ttime int) uint32 {
+    var id uint32
+    str := ttype + command
+    if(ttype=="timer") {
+       str = str + strconv.Itoa(ttime) 
+    }
+    
+    key := []byte(str)
+    id = murmur3.Sum32(key)
+
+    return id
+}
+
+//生成定时任务key
+func MakeTaskKey(command string, ttype string, ttime int) (uint32,string) {
+    var id uint32
+    var key string
+
+    id = MakeTimerId(command,ttype,ttime)
+    key = strconv.Itoa(int(id))
+
+    return id,key
 }
