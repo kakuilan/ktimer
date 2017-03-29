@@ -6,6 +6,7 @@ import (
 	"murmur3"
 	"time"
     "math"
+    "encoding/json"
     "strconv"
     "github.com/shopspring/decimal"
 )
@@ -122,18 +123,63 @@ func AddTimer(td KtimerData) (bool, error) {
         return res,err
     }
 
+    _,kid := MakeTaskKey(td.Command,td.Type,td.Time)
+    secNum := GetMainSecond(detail.Run_nexttime)
+    jsonRes,err := json.Marshal(detail)
+
+    a,b := _addTask2Pool(kid, jsonRes)
 
 
-
-	ts := time.Now().Unix()
-    tc := time.Now().UnixNano()
-    mas := GetMainSecond(now_mic)
-    fmt.Println("detail:", detail, ts, tc, mas, maxSeconds, maxTimestamp)
-
-
+    fmt.Println("detail:", detail,kid,secNum,jsonRes, a,b)
 
 	return res, err
 }
+
+//添加任务到任务池
+func _addTask2Pool(kid string, task []byte) (bool,error) {
+    var res bool
+    var err error
+
+    cnfObj,_ := GetConfObj()
+    key := cnfObj.String("task_pool_key")
+    client,err := GetRedisClient()
+    if err!=nil {
+        return res,err
+    }
+
+    err = client.HSet(key, kid, string(task)).Err()
+    if err==nil {
+        res = true
+    }
+
+    return res,err
+}
+
+//从任务池删除任务
+func _delTask4Pool(kid string) (bool,error) {
+    var res bool
+    var err error
+
+    cnfObj,_ := GetConfObj()
+    key := cnfObj.String("task_pool_key")
+    client,err := GetRedisClient()
+    if err!=nil {
+        return res,err
+    }
+
+    err = client.HDel(key, kid).Err()
+    if err==nil {
+        res = true
+    }
+
+    return res,err
+}
+
+
+func _addTask2Queu() {
+    
+}
+
 
 //重新添加定时器任务
 func ReaddTimer() {
