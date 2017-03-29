@@ -127,7 +127,8 @@ func CatchCli() {
             num,err := CountTimer()
             fmt.Println(num,err)
 		case "clear":
-			//TODO
+		    res,err := ClearTimer()
+            fmt.Println(res,err)
 		case "get":
 			//TODO
 		case "add":

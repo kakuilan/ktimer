@@ -241,8 +241,28 @@ func CountTimer() (int,error) {
 }
 
 //清空所有定时器
-func ClearTimer() {
+func ClearTimer() (bool,error) {
+   var res bool
+   var err error
 
+   cnfObj,_ := GetConfObj()
+   pool_key := cnfObj.String("task_pool_key")
+   trun_prefix := cnfObj.String("task_trun_key")
+   client,err := GetRedisClient()
+   if err!=nil {
+       return res,err
+   }
+
+   err = client.Del(pool_key).Err()
+   if err==nil {
+       res = true
+       for i:=0;i<=59;i++ {
+            trun_key := trun_prefix + strconv.Itoa(i)
+            _ = client.Del(trun_key)
+       }
+   }
+
+    return res,err
 }
 
 //执行定时器秒任务
