@@ -9,6 +9,7 @@ import (
     "encoding/json"
     "strconv"
     "github.com/shopspring/decimal"
+    "github.com/go-redis/redis"
 )
 
 const (
@@ -106,7 +107,7 @@ func AddTimer(td KtimerData) (bool, error) {
     detail.Run_lasttime = 0
     now_sec,now_mic := GetCurrentTime()
     fmt.Printf("GetCurrentTime: %d %10.6f \n", now_sec, now_mic)
-	
+
     maxSeconds, maxTimestamp, err := GetSysTimestampLimit()
 	if err != nil {
 		err = errors.New("conf task_max_day is error")
@@ -127,10 +128,12 @@ func AddTimer(td KtimerData) (bool, error) {
     secNum := GetMainSecond(detail.Run_nexttime)
     jsonRes,err := json.Marshal(detail)
 
-    a,b := _addTask2Pool(kid, jsonRes)
-
-
-    fmt.Println("detail:", detail,kid,secNum,jsonRes, a,b)
+    res,err = _addTask2Pool(kid, jsonRes)
+    if err!=nil {
+        _,_  = _delTask4Pool(kid)
+        return res,err
+    }
+    res,err = _addTask2Queu(kid,detail.Run_nexttime,secNum)
 
 	return res, err
 }
@@ -175,9 +178,26 @@ func _delTask4Pool(kid string) (bool,error) {
     return res,err
 }
 
+//新增任务到运转队列
+func _addTask2Queu(kid string, nextime float64, secondkey int) (bool,error) {
+    var res bool
+    var err error
 
-func _addTask2Queu() {
-    
+    cnfObj,_ := GetConfObj()
+    prefix := cnfObj.String("task_trun_key")
+    key := prefix + strconv.Itoa(secondkey)
+    client,err := GetRedisClient()
+    if err!=nil {
+        return res,err
+    }
+
+    zd := redis.Z{nextime, kid}
+    err = client.ZAdd(key, zd).Err()
+    if err==nil {
+        res = true
+    }
+
+    return res,err
 }
 
 
