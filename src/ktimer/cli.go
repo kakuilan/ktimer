@@ -124,7 +124,8 @@ func CatchCli() {
 		case "restart":
 			ServiceRestart()
 		case "count":
-			//TODO
+            num,err := CountTimer()
+            fmt.Println(num,err)
 		case "clear":
 			//TODO
 		case "get":

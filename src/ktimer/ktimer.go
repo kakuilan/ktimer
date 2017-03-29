@@ -106,8 +106,6 @@ func AddTimer(td KtimerData) (bool, error) {
 	detail.Run_num = 0
     detail.Run_lasttime = 0
     now_sec,now_mic := GetCurrentTime()
-    fmt.Printf("GetCurrentTime: %d %10.6f \n", now_sec, now_mic)
-
     maxSeconds, maxTimestamp, err := GetSysTimestampLimit()
 	if err != nil {
 		err = errors.New("conf task_max_day is error")
@@ -134,6 +132,9 @@ func AddTimer(td KtimerData) (bool, error) {
         return res,err
     }
     res,err = _addTask2Queu(kid,detail.Run_nexttime,secNum)
+    if res {
+        LogRunes("add new task", detail)
+    }
 
 	return res, err
 }
@@ -217,13 +218,26 @@ func GetTimer() {
 }
 
 //删除定时器
-func DelTimer() {
-
+func DelTimer(kid string) (bool,error) {
+    res,err := _delTask4Pool(kid)
+    return res,err
 }
 
-//统计定时器
-func CountTimer() {
+//统计定时器任务
+func CountTimer() (int,error) {
+    var res int
+    var err error
 
+    cnfObj,_ := GetConfObj()
+    key := cnfObj.String("task_pool_key")
+    client,err := GetRedisClient()
+    if err!=nil {
+        return res,err
+    }
+
+    num,err := client.HLen(key).Result()
+    res = int(num)
+    return res,err
 }
 
 //清空所有定时器
