@@ -6,6 +6,7 @@ import (
 	"murmur3"
 	"time"
     "math"
+    "strconv"
     "github.com/shopspring/decimal"
 )
 
@@ -99,22 +100,34 @@ func AddTimer(td KtimerData) (bool, error) {
 		0.0,
 		0.0,
 	}
-	detail.Time = 5
 
-    
-
-	maxSeconds, maxTimestamp, err := GetSysTimestampLimit()
+	detail.Run_num = 0
+    detail.Run_lasttime = 0
+    now_sec,now_mic := GetCurrentTime()
+    fmt.Printf("GetCurrentTime: %d %10.6f \n", now_sec, now_mic)
+	
+    maxSeconds, maxTimestamp, err := GetSysTimestampLimit()
 	if err != nil {
 		err = errors.New("conf task_max_day is error")
 		return res, err
-	}
+    }else if td.Time<=maxSeconds {
+        detail.Run_nexttime = float64(td.Time) + now_mic
+    }else if td.Time>maxSeconds && td.Time <now_sec {
+        err = errors.New("time as second cannot >"+ strconv.Itoa(maxSeconds))
+        return res,err
+    }else if td.Time>=now_sec && td.Time <=maxTimestamp {
+        detail.Run_nexttime = float64(td.Time)
+    }else{
+        err = errors.New("time as timestamp cannot>"+ strconv.Itoa(maxTimestamp))
+        return res,err
+    }
 
-    tm_sec,tm_mic := GetCurrentTime()
-    fmt.Printf("GetCurrentTime: %d %10.6f \n", tm_sec, tm_mic)
+
+
 
 	ts := time.Now().Unix()
     tc := time.Now().UnixNano()
-    mas := GetMainSecond(tm_mic)
+    mas := GetMainSecond(now_mic)
     fmt.Println("detail:", detail, ts, tc, mas, maxSeconds, maxTimestamp)
 
 
