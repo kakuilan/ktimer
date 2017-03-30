@@ -7,6 +7,15 @@ import (
 	"strings"
 )
 
+//命令行参数结构体
+type CliPara struct {
+    Type string `json:"type"`
+    Time int `json:"time"`
+    Limit int `json:"limit"`
+    Command string `json:"command"`
+    Kid string `json:"kid"`
+}
+
 //命令集
 var Commands = []string{
 	"help",
@@ -24,6 +33,7 @@ var Commands = []string{
 	"del",
 	"add",
 	"update",
+    "list",
 }
 
 //打印帮助信息
@@ -50,10 +60,10 @@ func Help() {
 	fmt.Printf("%8s%-10s%-s\n", " ", "clear", "clear current all tasks")
 	fmt.Printf("%8s%-10s%-s\n", " ", "", "example:")
 	fmt.Printf("%8s%-10s%-s\n", " ", "", "ktimer clear")
-	fmt.Printf("%8s%-10s%-s\n", " ", "get", "get the timer information by a key.The key when inserted timer return")
+	fmt.Printf("%8s%-10s%-s\n", " ", "get", "get the timer information by a kid.The kid when inserted timer return")
 	fmt.Printf("%8s%-10s%-s\n", " ", "", "example:")
 	fmt.Printf("%8s%-10s%-s\n", " ", "", "ktimer get 8610014451")
-	fmt.Printf("%8s%-10s%-s\n", " ", "del", "delete the timer by a key.The key when inserted timer return")
+	fmt.Printf("%8s%-10s%-s\n", " ", "del", "delete the timer by a kid.The kid when inserted timer return")
 	fmt.Printf("%8s%-10s%-s\n", " ", "", "example:")
 	fmt.Printf("%8s%-10s%-s\n", " ", "", "ktimer del 8610014451")
 	fmt.Printf("%8s%-10s%-s\n", " ", "add", "add a timer,it has following parameters:")
@@ -64,9 +74,14 @@ func Help() {
 	fmt.Printf("%8s%-10s%-s\n", " ", "", "example:")
 	fmt.Printf("%8s%-10s%-s\n", " ", "", "ktimer add -type=timer -time=1 -limit=1 -command=\"echo -e Hello Ktimer\"")
 	fmt.Printf("%8s%-10s%-s\n", " ", "", "ktimer add -type=ticker -time=1 -limit=0 -command=\"date --rfc-3339=ns\"")
-	fmt.Printf("%8s%-10s%-s\n"," ", "update", "update the timer by a key.The key when inserted timer return")
+	fmt.Printf("%8s%-10s%-s\n"," ", "update", "update the timer by a kid.The kid when inserted timer return")
     fmt.Printf("%8s%-10s%-s\n"," ", "", "example:")
 	fmt.Printf("%8s%-10s%-s\n"," ", "", "ktimer update -key=8610014451 -time=5 -limit=6")
+    fmt.Printf("%8s%-10s%-s\n"," ", "list", "show a list of tasks for a period of time.it has two parameters:")
+    fmt.Printf("%8s%-10s%-s\n", " ", "", "-starttime: specify a start timestamp")
+    fmt.Printf("%8s%-10s%-s\n", " ", "", "-endtime: specify a end timestamp")
+    fmt.Printf("%8s%-10s%-s\n", " ", "", "example:")
+    fmt.Printf("%8s%-10s%-s\n"," ", "", "ktimer list -starttime=1480848121 -endtime=1490848121")
 	os.Exit(0)
 }
 
@@ -151,7 +166,18 @@ func CatchCli() {
 }
 
 //解析CLI下Add的相关参数
-func ParseAddCliArgs() {
+func ParseAddCliArgs() CliPara {
+    cp := CliPara{}
     
+    for i,arg := range os.Args {
+        if i>1 && (strings.HasPrefix(arg, "-") || strings.HasPrefix(arg, "--")){
+            
+
+        }
+
+    }
+
+
+    return cp
 }
 
