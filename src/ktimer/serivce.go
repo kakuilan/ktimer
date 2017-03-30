@@ -8,7 +8,8 @@ import (
 	"github.com/takama/daemon"
 	"github.com/go-redis/redis"
 	"os"
-	"strings"
+    "io/ioutil"
+    "strings"
 //    "encoding/json"
 )
 
@@ -393,6 +394,29 @@ func ServiceMain() {
 
 //查看运行时服务的信息
 func ServiceInfo() {
+    var cnfStr string
+    taskNum,_ := CountTimer()
+   
+    ServiceInit()
+    serPidno, _ := GetServicePidNo()
+    chk, _ := PidIsActive(serPidno)
+    if !chk {
+        fmt.Println("service is not running.")
+        os.Exit(0)
+    }
+    
+    //当前运行的配置
+    runDir,_ := CheckRuntimedir()
+    runCnf := runDir + "/runcnf"
+    cnfBuf,err := ioutil.ReadFile(runCnf)
+    if err==nil {
+        cnfStr = string(cnfBuf)
+    }
+
+    fmt.Println("service is running...")
+    fmt.Println("current tasks num:", taskNum)
+    fmt.Println("current running conf:")
+    fmt.Println(cnfStr)
 
 }
 
