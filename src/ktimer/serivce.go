@@ -425,3 +425,8 @@ func ServiceVersion() {
 	fmt.Printf("Version %s [%s]\n", VERSION, PUBDATE)
 	os.Exit(0)
 }
+
+//查看任务列表
+func ServiceList() {
+    
+}

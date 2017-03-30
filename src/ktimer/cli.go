@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
     "regexp"
+    "strconv"
+    "errors"
 )
 
 //命令行参数结构体
@@ -150,26 +152,32 @@ func CatchCli() {
 		case "get":
 			//TODO
 		case "add":
-			//TODO
-            test := KtimerData{
-                "timer",
-                1,
-                1,
-                "echo -e Hello Ktimer",
+            clipar,err := ParseCliArgs()
+            if err!=nil {
+                fmt.Println(err)
+                os.Exit(0)
             }
-            res,err := AddTimer(test)
+            kd := KtimerData{
+                clipar.Type,
+                clipar.Time,
+                clipar.Limit,
+                clipar.Command,
+            }
+            res,err := AddTimer(kd)
             fmt.Println(res, err)
 		case "update":
 			//TODO
+        case "list":
+            //TODO
 		}
-
 
 	}
 
 }
 
-//解析CLI下Add的相关参数
-func ParseAddCliArgs() CliPara {
+//解析CLI下的相关参数
+func ParseCliArgs() (CliPara,error) {
+    var err error
     cp := CliPara{}
     reg := regexp.MustCompile(`[-]{1,2}([a-z]+)=['"]?([^"]*)['"]?`)
     for i,arg := range os.Args {
@@ -181,12 +189,35 @@ func ParseAddCliArgs() CliPara {
             k,v := mat[0][1],mat[0][2]
             switch (k) {
             case "type":
-
+                cp.Type = v
+            case "time" :
+                cp.Time,err = strconv.Atoi(v)
+                if err !=nil {
+                    err = errors.New("time must be integer")
+                }
+            case "limit" :
+                cp.Limit,err = strconv.Atoi(v)
+                if err!=nil {
+                    err = errors.New("limit must be integer")
+                }
+            case "command" :
+                cp.Command = v
+            case "kid" :
+                cp.Kid = v
+            case "starttime" :
+                cp.Starttime,err = strconv.Atoi(v)
+                if err!=nil {
+                    err = errors.New("starttime must be integer")
+                }
+            case "endtime" :
+                cp.Endtime,err = strconv.Atoi(v)
+                if err!=nil {
+                    err = errors.New("endtime must be integer")
+                }
             }
-
         }
     }
 
-    return cp
+    return cp,err
 }
 
