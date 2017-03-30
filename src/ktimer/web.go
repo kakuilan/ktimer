@@ -36,6 +36,8 @@ type TimerParm struct {
     Command string `json:"command"`
     Key string `json:"key"`
     Passwd string `json:"passwd"`
+    Starttime string `json:"starttime"`
+    Endtime string `json:"endtime"`
 }
 
 //排除的参数字符
@@ -221,6 +223,12 @@ func getTimerParams(r *http.Request) TimerParm {
     }
     if len(r.Form["passwd"])>0 {
         tp.Passwd = r.Form["passwd"][0]
+    }
+    if len(r.Form["starttime"])>0 {
+        tp.Starttime = r.Form["starttime"][0]
+    }
+    if len(r.Form["endtime"])>0 {
+        tp.Endtime = r.Form["endtime"][0]
     }
 
     return tp

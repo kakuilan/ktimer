@@ -8,6 +8,7 @@ import (
     "math"
     "encoding/json"
     "strconv"
+    "regexp"
     "github.com/shopspring/decimal"
     "github.com/go-redis/redis"
 )
@@ -376,3 +377,12 @@ func MakeTaskKey(command string, ttype string, ttime int) (uint32,string) {
 
     return id,key
 }
+
+//检查字符串是否URL
+func IsUrl(str string) bool {
+    var res bool
+    reg,_ := regexp.Compile(`^[a-zA-Z]+://(\w+(-\w+)*)(\.(\w+(-\w+)*))*(\?\s*)?$`)
+    res = reg.Match([]byte(str))
+    return res
+}
+

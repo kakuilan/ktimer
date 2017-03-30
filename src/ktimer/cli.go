@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+    "regexp"
 )
 
 //命令行参数结构体
@@ -14,6 +15,8 @@ type CliPara struct {
     Limit int `json:"limit"`
     Command string `json:"command"`
     Kid string `json:"kid"`
+    Starttime int `json:"starttime"`
+    Endtime int `json:"endtime"`
 }
 
 //命令集
@@ -168,15 +171,21 @@ func CatchCli() {
 //解析CLI下Add的相关参数
 func ParseAddCliArgs() CliPara {
     cp := CliPara{}
-    
+    reg := regexp.MustCompile(`[-]{1,2}([a-z]+)=['"]?([^"]*)['"]?`)
     for i,arg := range os.Args {
         if i>1 && (strings.HasPrefix(arg, "-") || strings.HasPrefix(arg, "--")){
-            
+            mat := reg.FindAllStringSubmatch(arg, -1)
+            if len(mat)==0 {
+                continue
+            }
+            k,v := mat[0][1],mat[0][2]
+            switch (k) {
+            case "type":
+
+            }
 
         }
-
     }
-
 
     return cp
 }
