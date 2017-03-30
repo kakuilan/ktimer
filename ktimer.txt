@@ -8,6 +8,8 @@ https://github.com/zgljl2012/go-cli/blob/master/src/cli/cli.go
 https://github.com/takama/daemon 守护进程
 https://github.com/natefinch/lumberjack  日志
 https://github.com/siddontang/ledisdb  redis替代
+https://github.com/andelf/go-curl 
+https://github.com/shopspring/decimal 
 参考文章
 https://my.oschina.net/u/943306/blog/149395
 https://dave.cheney.net/2013/10/15/how-does-the-go-build-command-work
@@ -28,10 +30,15 @@ panic http://studygolang.com/articles/1809
 http://www.oschina.net/translate/golang-graceful-stop
 https://grisha.org/blog/2014/06/03/graceful-restart-in-golang/
 http://stackoverflow.com/questions/11886531/terminating-a-process-started-with-os-exec-in-golang
-web http://www.cnblogs.com/yjf512/archive/2012/09/03/2668384.html
+http://www.cnblogs.com/yjf512/archive/2012/09/03/2668384.html  web
+http://www.cnblogs.com/yjf512/archive/2012/08/22/2650873.html
+http://www.widuu.com/archives/11/842.html
 https://segmentfault.com/a/1190000004445975
 http://www.cnblogs.com/yjf512/archive/2012/06/18/2554066.html
+http://studygolang.com/articles/5308 request
+http://studygolang.com/articles/6518
 http://stackoverflow.com/questions/33768557/how-to-bind-an-http-client-in-go-to-an-ip-address  golang bind ip
+http://studygolang.com/articles/2300 get post form
 
 ------------------------------------------
 安装git
@@ -67,6 +74,8 @@ echo "PATH=\$PATH:\$GOPATH/bin" >> ~/.zshrc
 source ~/.zshrc
 
 
+go 版本1.8
+
 源码结构
 src:
 config
@@ -101,7 +110,7 @@ conf.ini
 
 [default]
 #pid文件
-pidfile = ktimer.pid
+pidfile = runtime/ktimer.pid
 #最大任务数量
 task_max_num = 500000
 #最大任务天数
@@ -110,7 +119,7 @@ task_max_day = 100
 task_pool_key = ktimer:tasks:all
 #待运转任务缓存key
 task_trun_key = ktimer:tasks:second
-#分布式锁key
+#任务锁key
 task_lcok_key = ktimer:tasks:lock
 #任务过期限制.默认执行60秒内的任务,超过则抛弃;为0则不限制,全部执行
 task_expire_limit = 60
@@ -138,11 +147,14 @@ redis.passwd =
 [log]
 log.dir = log
 #日志最大尺寸M
-log.maxsize = 500
+log.maxsize = 10
 #日志最多备份
 log.maxbackup = 5
 #日志保留天数
 log.maxage = 30
+#服务日志
+log.serve_open = 1
+log.serve_file = serve.log
 #错误日志
 log.error_open = 1
 log.error_file = error.log
@@ -155,36 +167,38 @@ log.webac_file = webac.log
 ------------------------------
 程序命令列表 --新
 查看帮助
-ktimer help
+	ktimer help
 查看版本号
-ktimer version
+	ktimer version
 查看服务状态(是否在运行)
-ktimer status
+	ktimer status
 查看运行时服务的信息
-ktimer info
+	ktimer info
 安装服务到系统
-ktimer install
+	ktimer install
 从系统卸载服务
-ktimer remove
+	ktimer remove
 启动服务
-ktimer start
+	ktimer start
 停止服务
-ktimer stop
+	ktimer stop
 重启服务
-ktimer restart
+	ktimer restart
 统计当前任务总数
-ktimer count
+	ktimer count
 清空删除所有任务
-ktimer clear
+	ktimer clear
 获取任务信息
-ktimer get 8610014451
+	ktimer get 8610014451
 删除定时任务
-ktimer del 8610014451
+	ktimer del 8610014451
 加入定时任务
-ktimer add -type=timer -time=1 -limit=1 -command="echo -e Hello Ktimer"
-ktimer add -type=ticker -time=1 -limit=0 -command="date --rfc-3339=ns"
+	ktimer add -type=timer -time=1 -limit=1 -command="echo -e Hello Ktimer"
+	ktimer add -type=ticker -time=1 -limit=0 -command="date --rfc-3339=ns"
 更新定时任务
-ktimer update -key=8610014451 -time=5 -limit=6
+	ktimer update -kid=8610014451 -time=5 -limit=6
+显示任务列表(某段时间内)
+	ktimer list -starttime=1480848121 -endtime=1490848121
 ----------------------------------------------
 流程:
 Init()
@@ -206,20 +220,33 @@ key=>{
 'run_num' : '已执行次数',
 'run_lasttime' : '上次执行时间',
 'run_nexttime' : '下次执行时间',
-
 }
 
 ./main add -type="ticker" -time=5 -limit=3 -command="date --rfc-3339=ns" abc="x*y=z" efg
 
 WEB端: action包括help/version/info/count/clear/get/del/update
+web访问参数：
+{
+	action : "动作",
+	type : "定时器类型",
+	time : "执行时间",
+	limit : "次数限制",
+	command : "具体任务",
+	kid : "定时器ID或其他",
+	passwd : "访问密码",
+	starttime : '显示列表时的起始时间',
+	endtime : '显示列表时的结束时间',
+}
 返回json:
 {
-		"status" : "处理状态:true,false",
-		"data" : "具体数据",
-		"msg" : "提示信息",
-
+    "status" : "处理状态:true,false",
+    "data" : "具体数据",
+    "msg" : "提示信息",
 }
 
+limit限制
+type=timer时,必须大于0
+type=ticker时,0为不限制
 
 -----------------------------------------
 函数
@@ -227,11 +254,14 @@ WEB端: action包括help/version/info/count/clear/get/del/update
 获取系统时间戳限制
 GetSysTimestampLimit() maxSeconds,maxTimestamp
 
+获取主秒数
+GetMainSecond()
+
+获取当前时间
+GetCurrentTime() int,float32
+
 生成定时器ID
-MakeTimerId([]byte command) uint32 
-
-
-
+MakeTimerId(command string, type string, time int) uint32 
 
 -----------------------------------------
 插件
@@ -244,26 +274,36 @@ var dependencies = []string{"dummy.service"}改成var dependencies = []string{"m
 他是用systemd做daemon,这个只对coredump，kill-9会拉起程序，kill时不会拉起，要运维注意
 go build myservice.go
 
-
-git clone https://github.com/sevlyar/go-daemon.git
-go get github.com/sevlyar/go-daemon
-cd go-daemon/sample/
-
-
-
-git clone https://github.com/VividCortex/godaemon.git
-go get github.com/VividCortex/godaemon
-
 import "gopkg.in/natefinch/lumberjack.v2"
 go get gopkg.in/natefinch/lumberjack.v2
 
 git clone https://github.com/spaolacci/murmur3.git
 go get github.com/spaolacci/murmur3
 -----------------------------------------
+http://studygolang.com/articles/2876 url-parse
+获取get参数 
+r.FormValue("name1")
+r.ParseForm();
+r.Form.Get("id")
+
+ReqLog {
+	addr
+	method
+	url
+	params
+	header
+}
+
+http://192.168.128.130:9558/test?action=add&type=timer&time=60&limit=9
+curl --data "action=add&type=timer&time=60&limit=9" http://localhost:9558/test
+urlencode未能正常接收参数
+curl --data-urlencode "action=add&type=timer&time=60&limit=9" http://localhost:9558/test
+curl http://127.0.0.1:9510/message/index
+
+web-> command:http://test.com/test?page=1&_get={}&_post={}
 
 
-
-
+CliPara
 
 
 
