@@ -150,8 +150,22 @@ func CatchCli() {
 		    res,err := ClearTimer()
             fmt.Println(res,err)
 		case "get":
-			//TODO
-		case "add":
+            if argNum<=2 {
+                fmt.Println("missing parameter")
+                os.Exit(0)
+            }
+            clipar,err := ParseCliArgs()
+            if err!=nil {
+                fmt.Println(err)
+                os.Exit(0)
+            }
+            kid := clipar.Kid
+            if kid=="" {
+                kid = os.Args[2]
+            }
+
+            fmt.Println(kid)
+        case "add":
             clipar,err := ParseCliArgs()
             if err!=nil {
                 fmt.Println(err)
@@ -179,9 +193,9 @@ func CatchCli() {
 func ParseCliArgs() (CliPara,error) {
     var err error
     cp := CliPara{}
-    reg := regexp.MustCompile(`[-]{1,2}([a-z]+)=['"]?([^"]*)['"]?`)
+    reg := regexp.MustCompile(`[-]{0,2}([a-z]+)=['"]?([^"]*)['"]?`)
     for i,arg := range os.Args {
-        if i>1 && (strings.HasPrefix(arg, "-") || strings.HasPrefix(arg, "--")){
+        if i>1 && (strings.HasPrefix(arg, "-") || strings.HasPrefix(arg, "--") || strings.Index(arg,"=")>0 ) {
             mat := reg.FindAllStringSubmatch(arg, -1)
             if len(mat)==0 {
                 continue
