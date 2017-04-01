@@ -163,8 +163,9 @@ func CatchCli() {
             if kid=="" {
                 kid = os.Args[2]
             }
-
-            fmt.Println(kid)
+            
+            res,err :=GetTaskDetail(kid)
+            fmt.Println(res,err)
         case "add":
             clipar,err := ParseCliArgs()
             if err!=nil {

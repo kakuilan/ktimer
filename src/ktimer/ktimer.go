@@ -386,3 +386,24 @@ func IsUrl(str string) bool {
     return res
 }
 
+//获取任务详情
+func GetTaskDetail(kid string) (*KtaskDetail,error) {
+    var err error
+    var kd = &KtaskDetail{}
+
+    cnfObj,_ := GetConfObj()
+    key := cnfObj.String("task_pool_key")
+    client,err := GetRedisClient()
+    if err!=nil {
+        return kd,err
+    }
+
+    res,err := client.HGet(key, kid).Result()
+    if err==nil {
+        json.Unmarshal([]byte(res), kd)
+    }
+    fmt.Println(res,err)
+
+    return kd,err
+}
+
