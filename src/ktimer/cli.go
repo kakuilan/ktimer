@@ -147,7 +147,7 @@ func CatchCli() {
             ServiceInit()
             num,err := CountTimer()
             if err!=nil {
-                fmt.Println("has error,", err)
+                fmt.Println(err)
             }else{
                 fmt.Printf("there are [%d] tasks.\n", num)
             }
@@ -156,7 +156,7 @@ func CatchCli() {
             ServiceInit()
 		    res,err := ClearTimer()
             if err!=nil {
-                fmt.Println("has error,", err)
+                fmt.Println(err)
             }else{
                 fmt.Printf("operating result:[%t]\n", res)
             }
@@ -179,7 +179,7 @@ func CatchCli() {
  
             res,err :=GetTaskDetail(kid)
             if err!=nil {
-                fmt.Println("has error,", err)
+                fmt.Println(err)
             }else{
                 fmt.Printf("task detail info:\n%+v\n", res)
             }
@@ -203,7 +203,7 @@ func CatchCli() {
             }
             res,err := DelTaskDetail(kid)
             if err !=nil {
-                fmt.Println("has error,", err)
+                fmt.Println(err)
             }else{
                 fmt.Printf("operating result:[%t]\n", res)
             }
@@ -223,7 +223,7 @@ func CatchCli() {
             }
             res,err := AddTimer(kd)
             if err!=nil {
-                fmt.Println("has error,", err)
+                fmt.Println(err)
             }else{
                 fmt.Printf("operating result:[%t]\n", res)
             }

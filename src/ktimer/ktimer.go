@@ -410,6 +410,14 @@ func IsUrl(str string) bool {
     return res
 }
 
+//检查字符串是否数值
+func IsNumeric(str string) bool {
+    var res bool
+    reg,_ := regexp.Compile(`^[0-9]+(.[0-9]*)?$`)
+    res = reg.Match([]byte(str))
+    return res
+}
+
 //获取任务详情
 func GetTaskDetail(kid string) (*KtaskDetail,error) {
     var err error
@@ -418,6 +426,9 @@ func GetTaskDetail(kid string) (*KtaskDetail,error) {
     kid = strings.TrimSpace(kid)
     if kid=="" {
         err = errors.New("kid is empty")
+        return kd,err
+    }else if !IsNumeric(kid) {
+        err = errors.New("kid is not numeric")
         return kd,err
     }
 
@@ -431,6 +442,8 @@ func GetTaskDetail(kid string) (*KtaskDetail,error) {
     res,err := client.HGet(key, kid).Result()
     if err==nil {
         json.Unmarshal([]byte(res), kd)
+    }else{
+        err = errors.New("kid does not exist")
     }
     //fmt.Println(res,err)
 
@@ -447,6 +460,9 @@ func DelTaskDetail(kid string) (bool,error) {
     if kid=="" {
         err = errors.New("kid is empty")
         return res,err
+    }else if !IsNumeric(kid) {
+        err = errors.New("kid is not numeric")
+        return res,err
     }
 
     cnfObj,_ := GetConfObj()
@@ -460,6 +476,7 @@ func DelTaskDetail(kid string) (bool,error) {
     if err !=nil {
         return res,err
     }else if str=="" {
+        err = errors.New("kid does not exist")
         return true,err
     }
 
