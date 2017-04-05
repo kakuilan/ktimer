@@ -141,6 +141,17 @@ func AddTimer(td KtimerData) (bool, error) {
 	return res, err
 }
 
+//删除定时器
+func DelTimer(kid string) (bool,error) {
+    res,err := DelTaskDetail(kid)
+    if res {
+        LogRunes("del a task", kid)
+    }
+
+    return res,err
+}
+
+
 //添加任务到任务池
 func _addTask2Pool(kid string, task []byte) (bool,error) {
     var res bool
@@ -240,12 +251,6 @@ func UpdateTimer() {
 //获取定时器
 func GetTimer() {
 
-}
-
-//删除定时器
-func DelTimer(kid string) (bool,error) {
-    res,err := _delTask4Pool(kid)
-    return res,err
 }
 
 //统计定时器任务
@@ -474,10 +479,8 @@ func DelTaskDetail(kid string) (bool,error) {
 
     str,err := client.HGet(key, kid).Result()
     if err !=nil {
-        return res,err
-    }else if str=="" {
         err = errors.New("kid does not exist")
-        return true,err
+        return res,err
     }
 
     err = json.Unmarshal([]byte(str), kd)

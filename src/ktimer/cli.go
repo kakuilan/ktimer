@@ -201,7 +201,7 @@ func CatchCli() {
             if kid=="" {
                 kid = os.Args[2]
             }
-            res,err := DelTaskDetail(kid)
+            res,err := DelTimer(kid)
             if err !=nil {
                 fmt.Println(err)
             }else{
