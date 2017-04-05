@@ -73,18 +73,19 @@ func MainTimer() (bool, error) {
 }
 
 //加入定时器
-func AddTimer(td KtimerData) (bool, error) {
+func AddTimer(td *KtimerData) (bool, *KtimerTask, error) {
 	var res bool
 	var err error
+    var kt = &KtimerTask{}
 
 	if td.Command == "" {
 		err = errors.New("command is empty")
-		return res, err
+		return res, kt, err
 	}
 
 	if td.Type != "timer" && td.Type != "ticker" {
 		err = errors.New("type is error")
-		return res, err
+		return res,kt,err
 	}
 
 	if td.Time <= 0 {
@@ -98,47 +99,43 @@ func AddTimer(td KtimerData) (bool, error) {
 	}
 
 	//定时器详情
-	detail := KtimerTask{
-		td,
-		0,
-		0.0,
-		0.0,
-	}
+    kt.Type = td.Type
+    kt.Time = td.Time
+    kt.Limit = td.Limit
+    kt.Command = td.Command
 
-	detail.Run_num = 0
-    detail.Run_lasttime = 0
     now_sec,now_mic := GetCurrentTime()
     maxSeconds, maxTimestamp, err := GetSysTimestampLimit()
 	if err != nil {
 		err = errors.New("conf task_max_day is error")
-		return res, err
+		return res,kt,err
     }else if td.Time<=maxSeconds {
-        detail.Run_nexttime = float64(td.Time) + now_mic
+        kt.Run_nexttime = float64(td.Time) + now_mic
     }else if td.Time>maxSeconds && td.Time <now_sec {
         err = errors.New("time as second cannot >"+ strconv.Itoa(maxSeconds))
-        return res,err
+        return res,kt,err
     }else if td.Time>=now_sec && td.Time <=maxTimestamp {
-        detail.Run_nexttime = float64(td.Time)
+        kt.Run_nexttime = float64(td.Time)
     }else{
         err = errors.New("time as timestamp cannot>"+ strconv.Itoa(maxTimestamp))
-        return res,err
+        return res,kt,err
     }
 
     _,kid := MakeTaskKey(td.Command,td.Type,td.Time)
-    secNum := GetMainSecond(detail.Run_nexttime)
-    jsonRes,err := json.Marshal(detail)
+    secNum := GetMainSecond(kt.Run_nexttime)
+    jsonRes,err := json.Marshal(*kt)
 
     res,err = _addTask2Pool(kid, jsonRes)
     if err!=nil {
         _,_  = _delTask4Pool(kid)
-        return res,err
+        return res,kt,err
     }
-    res,err = _addTask2Queu(kid,detail.Run_nexttime,secNum)
+    res,err = _addTask2Queu(kid,kt.Run_nexttime,secNum)
     if res {
-        LogRunes("add new task", detail)
+        LogRunes("add new task", kt)
     }
 
-	return res, err
+	return res,kt,err
 }
 
 //删除定时器

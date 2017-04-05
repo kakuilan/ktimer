@@ -215,13 +215,13 @@ func CatchCli() {
                 fmt.Println(err)
                 os.Exit(0)
             }
-            kd := KtimerData{
+            kd := &KtimerData{
                 clipar.Type,
                 clipar.Time,
                 clipar.Limit,
                 clipar.Command,
             }
-            res,err := AddTimer(kd)
+            res,_,err := AddTimer(kd)
             if err!=nil {
                 fmt.Println(err)
             }else{
