@@ -258,6 +258,9 @@ func CatchCli() {
         case "list":
             ServiceInit()
             ServiceList()
+            now_sec := 1491385554.0
+            num,err := MainTimer(now_sec)
+            fmt.Println(num,err)
             //TODO
 		}
 

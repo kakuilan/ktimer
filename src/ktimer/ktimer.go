@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-redis/redis"
-	"github.com/shopspring/decimal"
 	"math"
 	"murmur3"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+	"github.com/go-redis/redis"
+	"github.com/shopspring/decimal"
 )
 
 const (
@@ -19,11 +19,11 @@ const (
 	SERDESC = "Ktimer Service"
 	PRODESC = "Ktimer is a simple timer/ticker task manager by golang."
 	VERSION = "0.0.1"
-	PUBDATE = "2017.3"
+	PUBDATE = "2017.4"
 	AUTHOR  = "kakuilan@163.com"
 )
 
-//定时器数据结构
+//定时器参数数据结构
 type KtimerData struct {
 	Type    string `json:"type"`
 	Time    int    `json:"time"`
@@ -41,35 +41,58 @@ type KtimerTask struct {
 
 //定时器容器
 func TimerContainer() {
-	rlg, _ := GetRunLoger()
-	elg, _ := GetErrLoger()
 	go func() {
-
+        //500毫秒的断续器
 		mt := time.Tick(time.Millisecond * 500)
 		for c := range mt {
 			pidno, _ := GetServicePidNo()
 			servpidno := GetCurrentServicePid()
 			if pidno > 0 && pidno != servpidno {
 				msg := fmt.Sprintf("check pid exception,service [%d] stopped.", servpidno)
-				elg.Println(msg)
+				LogErres(msg)
 			}
 
-			now := time.Now().UnixNano()
-			fmt.Println(mt, c, now)
-			rlg.Println(mt, c, now)
-			rlg.Println(SERNAME, "定时器运行")
-			MainTimer()
+			//MainTimer()
+            fmt.Println(c)
+            _,now_mic := GetCurrentTime()
+            LogRunes("ticker-MainTimer", now_mic)
+            go func(now_mic float64) {
+                runNum,runErr := MainTimer(now_mic)
+                if runErr!=nil {
+                    LogErres("MainTimer run error,", runErr)
+                }else{
+                    LogRunes("MainTimer run [%g] tasks at [%d]", runNum, now_mic)
+                }
+            }(now_mic)
+
 		}
 	}()
-
 }
 
 //主体定时器
-func MainTimer() (bool, error) {
-	var res bool = false
+func MainTimer(now_mic float64) (int,error) {
+	var num int
 	var err error
+    var breakQue bool
 
-	return res, err
+    ms := GetMainSecond(now_mic)
+    cnfObj, _ := GetConfObj()
+    prefix := cnfObj.String("task_trun_key")
+    key := prefix + strconv.Itoa(ms)
+
+    client,err := GetRedisClient()
+    if err!=nil {
+        LogErres("MainTimer redis error", err)
+    }
+
+    res,err := client.ZRangeWithScores(key, 0, 0).Result()
+    fmt.Println("result:", res, err)
+    fmt.Printf("%+v", res)
+
+
+    fmt.Println(breakQue,now_mic, ms) 
+
+	return num, err
 }
 
 //加入定时器
@@ -382,7 +405,7 @@ func GetMainSecond(t interface{}) int {
 	case int:
 		tmp, _ := t.(int)
 		mst = int64(tmp)
-		dec = decimal.New(mst, 1)
+		dec = decimal.New(mst, 0)
 	case int32:
 		tmp, _ := t.(int32)
 		mst = int64(tmp)
