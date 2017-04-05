@@ -3,7 +3,8 @@ package ktimer
 import (
 	"errors"
 	"fmt"
-	"murmur3"
+    "strings"
+    "murmur3"
 	"time"
     "math"
     "encoding/json"
@@ -414,6 +415,12 @@ func GetTaskDetail(kid string) (*KtaskDetail,error) {
     var err error
     var kd = &KtaskDetail{}
 
+    kid = strings.TrimSpace(kid)
+    if kid=="" {
+        err = errors.New("kid is empty")
+        return kd,err
+    }
+
     cnfObj,_ := GetConfObj()
     key := cnfObj.String("task_pool_key")
     client,err := GetRedisClient()
@@ -430,11 +437,17 @@ func GetTaskDetail(kid string) (*KtaskDetail,error) {
     return kd,err
 }
 
-//删除任务任务详情
+//删除任务详情
 func DelTaskDetail(kid string) (bool,error) {
     var err error
     var res bool
     var kd = &KtaskDetail{}
+
+    kid = strings.TrimSpace(kid)
+    if kid=="" {
+        err = errors.New("kid is empty")
+        return res,err
+    }
 
     cnfObj,_ := GetConfObj()
     key := cnfObj.String("task_pool_key")

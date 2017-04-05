@@ -146,11 +146,21 @@ func CatchCli() {
 		case "count":
             ServiceInit()
             num,err := CountTimer()
-            fmt.Println(num,err)
+            if err!=nil {
+                fmt.Println("has error,", err)
+            }else{
+                fmt.Printf("there are [%d] tasks.\n", num)
+            }
+            os.Exit(0)
 		case "clear":
             ServiceInit()
 		    res,err := ClearTimer()
-            fmt.Println(res,err)
+            if err!=nil {
+                fmt.Println("has error,", err)
+            }else{
+                fmt.Printf("operating result:[%t]\n", res)
+            }
+            os.Exit(0)
 		case "get":
             ServiceInit()
             if argNum<=2 {
@@ -168,7 +178,12 @@ func CatchCli() {
             }
  
             res,err :=GetTaskDetail(kid)
-            fmt.Println(res,err)
+            if err!=nil {
+                fmt.Println("has error,", err)
+            }else{
+                fmt.Printf("task detail info:\n%+v\n", res)
+            }
+            os.Exit(0)
         case "del" :
             ServiceInit()
             if argNum<=2 {
@@ -187,7 +202,12 @@ func CatchCli() {
                 kid = os.Args[2]
             }
             res,err := DelTaskDetail(kid)
-            fmt.Println(res,err)
+            if err !=nil {
+                fmt.Println("has error,", err)
+            }else{
+                fmt.Printf("operating result:[%t]\n", res)
+            }
+            os.Exit(0)
         case "add":
             ServiceInit()
             clipar,err := ParseCliArgs()
@@ -202,7 +222,12 @@ func CatchCli() {
                 clipar.Command,
             }
             res,err := AddTimer(kd)
-            fmt.Println(res, err)
+            if err!=nil {
+                fmt.Println("has error,", err)
+            }else{
+                fmt.Printf("operating result:[%t]\n", res)
+            }
+            os.Exit(0)
 		case "update":
             ServiceInit()
 			//TODO
