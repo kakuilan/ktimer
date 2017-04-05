@@ -177,7 +177,7 @@ func CatchCli() {
                 kid = os.Args[2]
             }
  
-            res,err :=GetTaskDetail(kid)
+            res,err := GetTimer(kid)
             if err!=nil {
                 fmt.Println(err)
             }else{
@@ -221,11 +221,11 @@ func CatchCli() {
                 clipar.Limit,
                 clipar.Command,
             }
-            res,_,err := AddTimer(kd)
+            res,kid,_,err := AddTimer(kd)
             if err!=nil {
                 fmt.Println(err)
             }else{
-                fmt.Printf("operating result:[%t]\n", res)
+                fmt.Printf("operating result:[%t] newkid:[%s]\n", res, kid)
             }
             os.Exit(0)
 		case "update":
@@ -241,10 +241,20 @@ func CatchCli() {
                 os.Exit(0)
             }
 
-            
+            kd := &KtimerData{
+                clipar.Type,
+                clipar.Time,
+                clipar.Limit,
+                clipar.Command,
+            }
 
-
-			//TODO
+            res,newkid,_,err := UpdateTimer(clipar.Kid,kd)
+			if err!=nil {
+                fmt.Println(err)
+            }else{
+                fmt.Printf("operatin result:[%t] newkid:%s\n", res,newkid)
+            }
+            os.Exit(0)
         case "list":
             ServiceInit()
             ServiceList()
