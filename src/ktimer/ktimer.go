@@ -85,9 +85,11 @@ func MainTimer(now_mic float64) (int,error) {
         LogErres("MainTimer redis error", err)
     }
 
-    res,err := client.ZRangeWithScores(key, 0, 0).Result()
-    fmt.Println("result:", res, err)
-    fmt.Printf("%+v", res)
+    zres,err := client.ZRangeWithScores(key, 0, 0).Result()
+    zlen := len(zres)
+
+    fmt.Println("result:", zres,zlen, err)
+    fmt.Printf("%+v", zres)
 
 
     fmt.Println(breakQue,now_mic, ms) 
@@ -562,3 +564,22 @@ func DelTaskDetail(kid string) (bool, error) {
 
 	return res, err
 }
+
+//获取任务处理锁
+func GetTaskDoingLock(kid string) (bool,error) {
+    var res bool
+    var err error
+    fmt.Println(kid)
+
+    return res,err
+}
+
+//解锁任务处理
+func UnlockTaskDoing(kid string) (bool,error) {
+    var res bool
+    var err error
+    fmt.Println(kid)
+
+    return res,err
+}
+
