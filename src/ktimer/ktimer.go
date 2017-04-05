@@ -202,6 +202,29 @@ func _addTask2Queu(kid string, nextime float64, secondkey int) (bool,error) {
     return res,err
 }
 
+//从运转队列删除任务
+func _delTask4Queu(kid string, nextime float64) (bool,error) {
+    var res bool 
+    var err error 
+
+    cnfObj,_ := GetConfObj()
+    prefix := cnfObj.String("task_trun_key")
+    
+    secondkey := GetMainSecond(nextime)
+    key := prefix + strconv.Itoa(secondkey)
+    client,err := GetRedisClient()
+    if err!=nil {
+        return res,err 
+    }
+
+    err = client.ZRem(key, kid).Err()
+    if err==nil {
+        res = true 
+    }
+
+    return res,err
+}
+
 
 //重新添加定时器任务
 func ReaddTimer() {
@@ -402,8 +425,38 @@ func GetTaskDetail(kid string) (*KtaskDetail,error) {
     if err==nil {
         json.Unmarshal([]byte(res), kd)
     }
-    fmt.Println(res,err)
+    //fmt.Println(res,err)
 
     return kd,err
 }
 
+//删除任务任务详情
+func DelTaskDetail(kid string) (bool,error) {
+    var err error
+    var res bool
+    var kd = &KtaskDetail{}
+
+    cnfObj,_ := GetConfObj()
+    key := cnfObj.String("task_pool_key")
+    client,err := GetRedisClient() 
+    if err!=nil {
+        return res,err 
+    }
+
+    str,err := client.HGet(key, kid).Result()
+    if err !=nil {
+        return res,err
+    }else if str=="" {
+        return true,err
+    }
+
+    err = json.Unmarshal([]byte(str), kd)
+    if err !=nil {
+        return res,err 
+    }
+
+    res,err = _delTask4Pool(kid)
+    _,_ = _delTask4Queu(kid, kd.Run_nexttime)
+
+   return res,err 
+}

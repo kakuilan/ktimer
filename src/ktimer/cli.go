@@ -144,12 +144,15 @@ func CatchCli() {
 		case "restart":
 			ServiceRestart()
 		case "count":
+            ServiceInit()
             num,err := CountTimer()
             fmt.Println(num,err)
 		case "clear":
+            ServiceInit()
 		    res,err := ClearTimer()
             fmt.Println(res,err)
 		case "get":
+            ServiceInit()
             if argNum<=2 {
                 fmt.Println("missing parameter")
                 os.Exit(0)
@@ -163,10 +166,30 @@ func CatchCli() {
             if kid=="" {
                 kid = os.Args[2]
             }
-            
+ 
             res,err :=GetTaskDetail(kid)
             fmt.Println(res,err)
+        case "del" :
+            ServiceInit()
+            if argNum<=2 {
+                fmt.Println("missing parameter")
+                os.Exit(0)
+            }
+
+            clipar,err := ParseCliArgs()
+            if err!=nil {
+                fmt.Println(err)
+                os.Exit(0)
+            }
+
+            kid := clipar.Kid 
+            if kid=="" {
+                kid = os.Args[2]
+            }
+            res,err := DelTaskDetail(kid)
+            fmt.Println(res,err)
         case "add":
+            ServiceInit()
             clipar,err := ParseCliArgs()
             if err!=nil {
                 fmt.Println(err)
@@ -181,8 +204,10 @@ func CatchCli() {
             res,err := AddTimer(kd)
             fmt.Println(res, err)
 		case "update":
+            ServiceInit()
 			//TODO
         case "list":
+            ServiceInit()
             //TODO
 		}
 
