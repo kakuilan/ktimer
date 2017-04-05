@@ -164,7 +164,7 @@ func CatchCli() {
 		case "get":
             ServiceInit()
             if argNum<=2 {
-                fmt.Println("missing parameter")
+                fmt.Println("missing parameter kid")
                 os.Exit(0)
             }
             clipar,err := ParseCliArgs()
@@ -187,7 +187,7 @@ func CatchCli() {
         case "del" :
             ServiceInit()
             if argNum<=2 {
-                fmt.Println("missing parameter")
+                fmt.Println("missing parameter kid")
                 os.Exit(0)
             }
 
@@ -230,9 +230,24 @@ func CatchCli() {
             os.Exit(0)
 		case "update":
             ServiceInit()
+            clipar,err := ParseCliArgs()
+            if err!=nil {
+                fmt.Println(err)
+                os.Exit(0)
+            }
+
+            if clipar.Kid=="" {
+                fmt.Println("missing parameter kid")
+                os.Exit(0)
+            }
+
+            
+
+
 			//TODO
         case "list":
             ServiceInit()
+            ServiceList()
             //TODO
 		}
 
@@ -269,6 +284,9 @@ func ParseCliArgs() (CliPara,error) {
                 cp.Command = v
             case "kid" :
                 cp.Kid = v
+                if !IsNumeric(cp.Kid) {
+                    err = errors.New("kid must be integer")
+                }
             case "starttime" :
                 cp.Starttime,err = strconv.Atoi(v)
                 if err!=nil {

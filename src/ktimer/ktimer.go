@@ -32,7 +32,7 @@ type KtimerData struct {
 }
 
 //定时任务详情结构
-type KtaskDetail struct {
+type KtimerTask struct {
 	KtimerData
 	Run_num      int     `json:"run_num"`
 	Run_lasttime float64 `json:"run_lasttime"`
@@ -98,7 +98,7 @@ func AddTimer(td KtimerData) (bool, error) {
 	}
 
 	//定时器详情
-	detail := KtaskDetail{
+	detail := KtimerTask{
 		td,
 		0,
 		0.0,
@@ -424,9 +424,9 @@ func IsNumeric(str string) bool {
 }
 
 //获取任务详情
-func GetTaskDetail(kid string) (*KtaskDetail,error) {
+func GetTaskDetail(kid string) (*KtimerTask,error) {
     var err error
-    var kd = &KtaskDetail{}
+    var kd = &KtimerTask{}
 
     kid = strings.TrimSpace(kid)
     if kid=="" {
@@ -459,7 +459,7 @@ func GetTaskDetail(kid string) (*KtaskDetail,error) {
 func DelTaskDetail(kid string) (bool,error) {
     var err error
     var res bool
-    var kd = &KtaskDetail{}
+    var kd = &KtimerTask{}
 
     kid = strings.TrimSpace(kid)
     if kid=="" {
