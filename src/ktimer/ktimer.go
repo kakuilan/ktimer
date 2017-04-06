@@ -54,16 +54,14 @@ func TimerContainer() {
 				LogErres(msg)
 			}
 
-			//MainTimer()
             _,now_mic := GetCurrentTime()
-            LogRunes("ticker-MainTimer", now_mic)
-            fmt.Println("MainTimer", c, now_mic)
+            msg := fmt.Sprintf("MainTimer begining c[%v], now[%0.6f]", c, now_mic)
+            LogRunes(msg)
+            fmt.Println(msg)
             func(now_mic float64) {
-                runNum,runErr := MainTimer(now_mic)
+                _,runErr := MainTimer(now_mic)
                 if runErr!=nil {
                     LogErres("MainTimer run error,", runErr)
-                }else{
-                    LogRunes("MainTimer runed tasks total:[%d] at time:[%0.6f]", runNum, now_mic)
                 }
             }(now_mic)
 
@@ -85,20 +83,14 @@ func MainTimer(now_mic float64) (int,error) {
     client,err := GetRedisClient()
     if err!=nil {
         LogErres("MainTimer redis error", err)
-    }
-
-    taskExpire,err := cnfObj.Int("task_expire_limit")
-    if err!=nil {
-        LogErres("MainTimer conf task_expire_limit err", err)
-    }else{
-        taskExpire = 60
+        return sucNum,err
     }
 
     for {
         if breakQue {
             break
         }
-        
+ 
         zres,err := client.ZRangeWithScores(key, 0, 0).Result()
         zlen := len(zres)
         if err!=nil || zlen ==0 {
@@ -106,16 +98,15 @@ func MainTimer(now_mic float64) (int,error) {
         }else{
             allNum++
             item := zres[0]
-            if Greater(item.Score, now_mic) { //未到执行时间
+            zms := GetMainSecond(item.Score)
+            if ms!=zms && GreaterOrEqual(item.Score, now_mic) { //未到执行时间
                 breakQue = true
-            }else if Greater((now_mic- float64(taskExpire)), item.Score) { //过期,丢弃不执行
-                kid := fmt.Sprintf("%s", item.Member)
-                _,_ = DelTaskDetail(kid)
-                msg := fmt.Sprintf("task is exired,deleted. kid[%s] nowtime[%0.6f] nextime[%0.6f] limit[%d]", item.Member, item.Score, taskExpire)
+                msg := fmt.Sprintf("not run time, nowtime[%0.6f] nextime[%0.6f] item:%v", now_mic, item.Score, item)
                 LogRunes(msg)
+                fmt.Println(msg)
             }else{ //执行任务
                 runRes,runErr := RunSecondTask(item, now_mic)
-                if runErr==nil && runRes {
+                if runRes && runErr==nil {
                     sucNum++
                 }
             }
@@ -140,25 +131,39 @@ func RunSecondTask(zd redis.Z, now_mic float64) (bool,error) {
     kd,err := GetTaskDetail(kid)
     if(err!=nil) {
         _,_ = DelTaskDetail(kid)
-        LogRunes("SecondTask kid is not exist", kid)
+        LogRunes("SecondTask is not exist,deleted.kid:", kid)
         return res,err
     }
 
     //获取任务执行锁
     locked,_ := GetTaskDoingLock(kid)
     if !locked {
-        LogRunes("SecondTask get doing lock fail", kid)
+        LogRunes("SecondTask get doing lock faili.kid:", kid)
         err = errors.New("get doing lock fail")
         return res,err
     }
 
     //达到执行次数限制,删除任务
-    if kd.Limit <= kd.Run_num {
+    if kd.Type=="ticker" && kd.Limit>0 && kd.Limit <= kd.Run_num {
         _,_ = UnlockTaskDoing(kid)
         _,_ = DelTaskDetail(kid)
-        msg := fmt.Sprintf("SecondTask kid[%s] had runed [%d] times", zd.Member, kd.Run_num)
+        msg := fmt.Sprintf("SecondTask kid[%s] had runed [%d] times,deleted.", zd.Member, kd.Run_num)
         LogRunes(msg, kd)
         return res,err
+    }
+
+    //检查是否过期
+    cnfObj, _ := GetConfObj()
+    taskExpire,err := cnfObj.Int("task_expire_limit")
+    if err!=nil {
+        taskExpire,err = 60,nil
+    }
+    if(GreaterOrEqual(now_mic - float64(taskExpire), kd.Run_nexttime)) {
+        _,_ = UnlockTaskDoing(kid)
+        _,_ = DelTaskDetail(kid)
+        msg := fmt.Sprintf("SecondTask is expired. kid[%s] nowtime[%0.6f] nextime[%0.6f] expire[%d],deleted.", kid, now_mic, kd.Run_nexttime, taskExpire)
+        LogRunes(msg)
+        fmt.Println(msg)
     }
 
     //执行日志
@@ -172,7 +177,7 @@ func RunSecondTask(zd redis.Z, now_mic float64) (bool,error) {
     if kd.Type=="ticker" && (kd.Limit==0 || (kd.Limit>0 && (kd.Limit-1)>kd.Run_num )) {
         _,addErr := ReaddTimerAfterRun(kid, kd)
         if addErr!=nil {
-            LogRunes("SecondTask readd task fail", addErr)
+            LogRunes("SecondTask readd task fail:", addErr)
         }
     }
     
@@ -262,7 +267,7 @@ func AddTimer(td *KtimerData) (bool, string, *KtimerTask, error) {
         }
 	}
 	if res {
-		LogRunes("add new task", kt)
+        LogRunes("add new task:", kid, kt)
 	}
 
 	return res, kid, kt, err
@@ -283,7 +288,7 @@ func ReaddTimerAfterRun(kid string, kt *KtimerTask) (bool, error) {
     }
 
     kt.Run_num++
-    if kt.Type!="ticker" || kt.Run_num>=kt.Limit {
+    if kt.Type!="ticker" || (kt.Limit>0 && kt.Run_num>=kt.Limit) {
         err = errors.New("task is not ticker or number limit")
         return res,err
     }
@@ -321,7 +326,7 @@ func ReaddTimerAfterRun(kid string, kt *KtimerTask) (bool, error) {
     }
 
     if res {
-        LogRunes("readd task", kt)
+        LogRunes("readd task:", kid, kt)
     }
     
     return res,err
@@ -331,7 +336,7 @@ func ReaddTimerAfterRun(kid string, kt *KtimerTask) (bool, error) {
 func DelTimer(kid string) (bool, error) {
 	res, err := DelTaskDetail(kid)
 	if res {
-		LogRunes("del a task", kid)
+        LogRunes("del a task:", kid)
 	}
 
 	return res, err
@@ -770,8 +775,8 @@ func UnlockTaskDoing(kid string) (bool,error) {
     return res,err
 }
 
-//浮点数比较大小
-func Greater(a,b float64) bool {
-    return math.Max(a,b) ==a && math.Abs(a-b) > 0.000001
+//浮点数比较>=
+func GreaterOrEqual(a,b float64) bool {
+    return math.Max(a,b) ==a || math.Abs(a-b) < 0.000001
 }
 
