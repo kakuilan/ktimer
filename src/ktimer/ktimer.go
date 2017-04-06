@@ -142,11 +142,36 @@ func MainTimer(now_mic float64) (int,error) {
 func RunSecondTask(zd redis.Z, now_mic float64) (bool,error) {
     var res bool
     var err error
-    
-    msg := fmt.Sprintf("begin single SecondTask:%0.6f kid:[%s] time:[%0.6f]", now_mic, zd.Member, zd.Score)
+
+    kid := fmt.Sprintf("%v", zd.Member)
+    kd,err := GetTaskDetail(kid)
+    if(err!=nil) {
+        _,_ = DelTaskDetail(kid)
+        LogRunes("begin single SecondTask kid[%s] is not exist", kid)
+        return res,err
+    }
+
+    //达到执行次数限制,删除任务
+    if kd.Limit <= kd.Run_num {
+        _,_ = DelTaskDetail(kid)
+        msg := fmt.Sprintf("begin single SecondTask kid[%s] had runed [%d] times", zd.Member, kd.Run_num)
+        LogRunes(msg, kd)
+        return res,err
+    }
+
+    //执行日志
+    msg := fmt.Sprintf("begin single SecondTask:%0.6f kid[%s] time[%0.6f]", now_mic, zd.Member, zd.Score)
     LogRunes(msg)
 
 
+
+    return res,err
+}
+
+//执行具体任务
+func RunDetailTask(kid string, command string) (bool,error) {
+    var res bool
+    var err error
 
     return res,err
 }
@@ -227,6 +252,9 @@ func DelTimer(kid string) (bool, error) {
 
 	return res, err
 }
+
+
+
 
 //添加任务到任务池
 func _addTask2Pool(kid string, task []byte) (bool, error) {
@@ -423,10 +451,6 @@ func ClearTimer() (bool, error) {
 }
 
 
-//执行具体任务
-func RunDetailTask() {
-
-}
 
 //从配置获取最大秒数
 func GetSysTimestampLimit() (int, int, error) {
