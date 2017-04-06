@@ -21,6 +21,7 @@ const (
 	VERSION = "0.0.1"
 	PUBDATE = "2017.4"
 	AUTHOR  = "kakuilan@163.com"
+    LOCKTIME = 2 * time.Second
 )
 
 //定时器参数数据结构
@@ -569,7 +570,25 @@ func DelTaskDetail(kid string) (bool, error) {
 func GetTaskDoingLock(kid string) (bool,error) {
     var res bool
     var err error
-    fmt.Println(kid)
+
+    if kid=="" {
+        err = errors.New("kid is empty")
+        return res,err
+    }
+
+    cnfObj, _ := GetConfObj()
+    prefix := cnfObj.String("task_lcok_key")
+    key := prefix + kid
+
+    client, err := GetRedisClient()
+    if err!=nil {
+        return res,err
+    }
+
+    err = client.SetNX(key, 1, LOCKTIME).Err()
+    if err==nil {
+        res = true
+    }
 
     return res,err
 }
@@ -578,7 +597,25 @@ func GetTaskDoingLock(kid string) (bool,error) {
 func UnlockTaskDoing(kid string) (bool,error) {
     var res bool
     var err error
-    fmt.Println(kid)
+
+    if kid=="" {
+        err = errors.New("kid is empty")
+        return res,err
+    }
+
+    cnfObj, _ := GetConfObj()
+    prefix := cnfObj.String("task_lcok_key")
+    key := prefix + kid
+
+    client, err := GetRedisClient()
+    if err!=nil {
+        return res,err
+    }
+
+    err = client.Del(key).Err()
+    if err==nil {
+        res = true
+    }
 
     return res,err
 }
