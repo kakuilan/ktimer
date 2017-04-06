@@ -55,15 +55,15 @@ func TimerContainer() {
 			}
 
 			//MainTimer()
-            fmt.Println(c)
             _,now_mic := GetCurrentTime()
             LogRunes("ticker-MainTimer", now_mic)
-            go func(now_mic float64) {
+            fmt.Println("MainTimer", c, now_mic)
+            func(now_mic float64) {
                 runNum,runErr := MainTimer(now_mic)
                 if runErr!=nil {
                     LogErres("MainTimer run error,", runErr)
                 }else{
-                    LogRunes("MainTimer run [%g] tasks at [%d]", runNum, now_mic)
+                    LogRunes("MainTimer runed tasks total:[%d] at time:[%0.6f]", runNum, now_mic)
                 }
             }(now_mic)
 
@@ -73,7 +73,7 @@ func TimerContainer() {
 
 //主体定时器
 func MainTimer(now_mic float64) (int,error) {
-	var num int
+	var allNum,sucNum int
 	var err error
     var breakQue bool
 
@@ -94,49 +94,41 @@ func MainTimer(now_mic float64) (int,error) {
         taskExpire = 60
     }
 
-    i := 0
     for {
         if breakQue {
             break
         }
         
-        i++
-        if i>5 {
-            breakQue = true
-        }
-
         zres,err := client.ZRangeWithScores(key, 0, 0).Result()
         zlen := len(zres)
         if err!=nil || zlen ==0 {
             breakQue = true
         }else{
+            allNum++
             item := zres[0]
             if Greater(item.Score, now_mic) { //未到执行时间
                 breakQue = true
             }else if Greater((now_mic- float64(taskExpire)), item.Score) { //过期,丢弃不执行
-               // _ = client.ZRem(key, item.Member).Err()
-               LogRunes("task is expired,deleted.", item)
+                kid := fmt.Sprintf("%s", item.Member)
+                _,_ = DelTaskDetail(kid)
+                msg := fmt.Sprintf("task is exired,deleted. kid[%s] nowtime[%0.6f] nextime[%0.6f] limit[%d]", item.Member, item.Score, taskExpire)
+                LogRunes(msg)
             }else{ //执行任务
                 runRes,runErr := RunSecondTask(item, now_mic)
                 if runErr==nil && runRes {
-                    num++
+                    sucNum++
                 }
             }
 
-                runRes,runErr := RunSecondTask(item, now_mic)
-                if runErr==nil && runRes {
-                    num++
-                }
-            fmt.Printf("type: %T\n", item)
+            fmt.Printf("redis.Z type: %T\n", item)
         }
-        fmt.Printf("%+v", zres, taskExpire)
     }
 
-    fmt.Println(breakQue,now_mic, ms)
-    msg := fmt.Sprintf("MainTimer:%0.6f, run tasks total:%d", now_mic, num)
+    msg := fmt.Sprintf("MainTimer:%0.6f, tasks total:[%d] runed:[%d]", now_mic, allNum, sucNum)
     LogRunes(msg)
+    fmt.Println(msg)
 
-	return num, err
+	return sucNum, err
 }
 
 //执行定时器秒任务
