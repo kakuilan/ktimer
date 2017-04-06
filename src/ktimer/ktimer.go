@@ -86,16 +86,69 @@ func MainTimer(now_mic float64) (int,error) {
         LogErres("MainTimer redis error", err)
     }
 
-    zres,err := client.ZRangeWithScores(key, 0, 0).Result()
-    zlen := len(zres)
+    taskExpire,err := cnfObj.Int("task_expire_limit")
+    if err!=nil {
+        LogErres("MainTimer conf task_expire_limit err", err)
+    }else{
+        taskExpire = 60
+    }
 
-    fmt.Println("result:", zres,zlen, err)
-    fmt.Printf("%+v", zres)
+    i := 0
+    for {
+        if breakQue {
+            break
+        }
+        
+        i++
+        if i>5 {
+            breakQue = true
+        }
 
+        zres,err := client.ZRangeWithScores(key, 0, 0).Result()
+        zlen := len(zres)
+        if err!=nil || zlen ==0 {
+            breakQue = true
+        }else{
+            item := zres[0]
+            if Greater(item.Score, now_mic) { //未到执行时间
+                breakQue = true
+            }else if Greater((now_mic- float64(taskExpire)), item.Score) { //过期,丢弃不执行
+               // _ = client.ZRem(key, item.Member).Err()
+               LogRunes("task is expired,deleted.", item)
+            }else{ //执行任务
+                runRes,runErr := RunSecondTask(item, now_mic)
+                if runErr==nil && runRes {
+                    num++
+                }
+            }
 
-    fmt.Println(breakQue,now_mic, ms) 
+                runRes,runErr := RunSecondTask(item, now_mic)
+                if runErr==nil && runRes {
+                    num++
+                }
+            fmt.Printf("type: %T\n", item)
+        }
+        fmt.Printf("%+v", zres, taskExpire)
+    }
+
+    fmt.Println(breakQue,now_mic, ms)
+    msg := fmt.Sprintf("MainTimer:%0.6f, run tasks total:%d", now_mic, num)
+    LogRunes(msg)
 
 	return num, err
+}
+
+//执行定时器秒任务
+func RunSecondTask(zd redis.Z, now_mic float64) (bool,error) {
+    var res bool
+    var err error
+    
+    msg := fmt.Sprintf("begin single SecondTask:%0.6f kid:[%s] time:[%0.6f]", now_mic, zd.Member, zd.Score)
+    LogRunes(msg)
+
+
+
+    return res,err
 }
 
 //加入定时器
@@ -369,10 +422,6 @@ func ClearTimer() (bool, error) {
 	return res, err
 }
 
-//执行定时器秒任务
-func RunSecondTask() {
-
-}
 
 //执行具体任务
 func RunDetailTask() {
@@ -618,5 +667,10 @@ func UnlockTaskDoing(kid string) (bool,error) {
     }
 
     return res,err
+}
+
+//浮点数比较大小
+func Greater(a,b float64) bool {
+    return math.Max(a,b) ==a && math.Abs(a-b) > 0.000001
 }
 
