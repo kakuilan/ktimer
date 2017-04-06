@@ -1,7 +1,6 @@
 package ktimer
 
 import (
-	//"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -176,7 +175,7 @@ func CatchCli() {
             if kid=="" {
                 kid = os.Args[2]
             }
- 
+
             res,err := GetTimer(kid)
             if err!=nil {
                 fmt.Println(err)

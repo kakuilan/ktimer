@@ -86,11 +86,12 @@ func MainTimer(now_mic float64) (int,error) {
         return sucNum,err
     }
 
+    i := 0;
     for {
         if breakQue {
             break
         }
- 
+        i++
         zres,err := client.ZRangeWithScores(key, 0, 0).Result()
         zlen := len(zres)
         if err!=nil || zlen ==0 {
@@ -111,7 +112,7 @@ func MainTimer(now_mic float64) (int,error) {
                 }
             }
 
-            fmt.Printf("redis.Z type: %T\n", item)
+            fmt.Printf("zstruct type:[%T] %v i[%d]\n", item, item, i)
         }
     }
 
@@ -130,8 +131,9 @@ func RunSecondTask(zd redis.Z, now_mic float64) (bool,error) {
     kid := fmt.Sprintf("%v", zd.Member)
     kd,err := GetTaskDetail(kid)
     if(err!=nil) {
-        _,_ = DelTaskDetail(kid)
+        delRes,delErr := DelTaskDetail(kid)
         LogRunes("SecondTask is not exist,deleted.kid:", kid)
+        fmt.Println("kid not exist", delRes, delErr)
         return res,err
     }
 
