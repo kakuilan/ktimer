@@ -163,7 +163,16 @@ func RunSecondTask(zd redis.Z, now_mic float64) (bool,error) {
     msg := fmt.Sprintf("begin single SecondTask:%0.6f kid[%s] time[%0.6f]", now_mic, zd.Member, zd.Score)
     LogRunes(msg)
 
+    //删除任务
+    _,_ = DelTaskDetail(kid)
 
+    //执行
+    RunDetailTask(kid, kd.Command)
+
+    //若是ticker,重新加入
+    if kd.Type=="ticker" && (kd.Limit==0 || (kd.Limit>0 && (kd.Limit-1)>kd.Run_num )) {
+
+    }
 
     return res,err
 }
@@ -229,18 +238,78 @@ func AddTimer(td *KtimerData) (bool, string, *KtimerTask, error) {
 	_, kid = MakeTaskKey(td.Command, td.Type, td.Time)
 	secNum := GetMainSecond(kt.Run_nexttime)
 	jsonRes, err := json.Marshal(*kt)
+    if err!=nil {
+        err = errors.New("task detail json encode fail")
+        return res,kid,kt,err
+    }
 
 	res, err = _addTask2Pool(kid, jsonRes)
-	if err != nil {
-		_, _ = _delTask4Pool(kid)
-		return res, kid, kt, err
+	if err == nil {
+	    res, err = _addTask2Queu(kid, kt.Run_nexttime, secNum)
+        if err!=nil {
+		    _, _ = _delTask4Pool(kid)
+        }
 	}
-	res, err = _addTask2Queu(kid, kt.Run_nexttime, secNum)
 	if res {
 		LogRunes("add new task", kt)
 	}
 
 	return res, kid, kt, err
+}
+
+//执行后重新添加定时任务
+func ReaddTimerAfterRun(kid string, kt *KtimerTask) (bool, error) {
+    var res bool
+    var err error
+
+    kid = strings.TrimSpace(kid)
+    if kid=="" {
+        err = errors.New("kid is empty")
+        return res,err
+    }else if !IsNumeric(kid) {
+        err = errors.New("kid is not numeric")
+        return res,err
+    }
+
+    kt.Run_num++
+    if kt.Type!="ticker" || kt.Run_num>=kt.Limit {
+        err = errors.New("task is not ticker or number limit")
+        return res,err
+    }
+
+	now_sec, now_mic := GetCurrentTime()
+	maxSeconds, maxTimestamp, err := GetSysTimestampLimit()
+	if err != nil {
+		err = errors.New("conf task_max_day is error")
+		return res,err
+	} else if kt.Time <= maxSeconds {
+		kt.Run_nexttime = float64(kt.Time) + now_mic
+	} else if kt.Time > maxSeconds && kt.Time < now_sec {
+		err = errors.New("time as second cannot >" + strconv.Itoa(maxSeconds))
+		return res,err
+	} else if kt.Time >= now_sec && kt.Time <= maxTimestamp {
+		kt.Run_nexttime = float64(kt.Time)
+	} else {
+		err = errors.New("time as timestamp cannot>" + strconv.Itoa(maxTimestamp))
+		return res,err
+	}
+
+    secNum := GetMainSecond(kt.Run_nexttime)
+    jsonRes,err := json.Marshal(*kt)
+    if err!=nil {
+        err = errors.New("task detail json encode fail")
+        return res,err
+    }
+
+    res,err = _addTask2Pool(kid, jsonRes)
+    if err==nil {
+        res,err = _addTask2Queu(kid, kt.Run_nexttime, secNum)
+        if err!=nil {
+            _, _ = _delTask4Pool(kid)
+        }
+    }
+
+    return res,err
 }
 
 //删除定时器
@@ -252,9 +321,6 @@ func DelTimer(kid string) (bool, error) {
 
 	return res, err
 }
-
-
-
 
 //添加任务到任务池
 func _addTask2Pool(kid string, task []byte) (bool, error) {
@@ -341,10 +407,6 @@ func _delTask4Queu(kid string, nextime float64) (bool, error) {
 	return res, err
 }
 
-//重新添加定时器任务
-func ReaddTimer() {
-
-}
 
 //更新定时器
 func UpdateTimer(oldkid string, kd *KtimerData) (bool, string, *KtimerTask, error) {
