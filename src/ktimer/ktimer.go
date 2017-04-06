@@ -22,6 +22,7 @@ const (
 	PUBDATE = "2017.4"
 	AUTHOR  = "kakuilan@163.com"
     LOCKTIME = 2 * time.Second
+//    TASKMAXTIME = 60 * time.Second
 )
 
 //定时器参数数据结构
@@ -147,33 +148,46 @@ func RunSecondTask(zd redis.Z, now_mic float64) (bool,error) {
     kd,err := GetTaskDetail(kid)
     if(err!=nil) {
         _,_ = DelTaskDetail(kid)
-        LogRunes("begin single SecondTask kid[%s] is not exist", kid)
+        LogRunes("SecondTask kid is not exist", kid)
+        return res,err
+    }
+
+    //获取任务执行锁
+    locked,_ := GetTaskDoingLock(kid)
+    if !locked {
+        LogRunes("SecondTask get doing lock fail", kid)
+        err = errors.New("get doing lock fail")
         return res,err
     }
 
     //达到执行次数限制,删除任务
     if kd.Limit <= kd.Run_num {
+        _,_ = UnlockTaskDoing(kid)
         _,_ = DelTaskDetail(kid)
-        msg := fmt.Sprintf("begin single SecondTask kid[%s] had runed [%d] times", zd.Member, kd.Run_num)
+        msg := fmt.Sprintf("SecondTask kid[%s] had runed [%d] times", zd.Member, kd.Run_num)
         LogRunes(msg, kd)
         return res,err
     }
 
     //执行日志
-    msg := fmt.Sprintf("begin single SecondTask:%0.6f kid[%s] time[%0.6f]", now_mic, zd.Member, zd.Score)
+    msg := fmt.Sprintf("SecondTask begining:%0.6f kid[%s] time[%0.6f]", now_mic, zd.Member, zd.Score)
     LogRunes(msg)
 
     //删除任务
     _,_ = DelTaskDetail(kid)
 
+    //若是ticker,重新加入
+    if kd.Type=="ticker" && (kd.Limit==0 || (kd.Limit>0 && (kd.Limit-1)>kd.Run_num )) {
+        _,addErr := ReaddTimerAfterRun(kid, kd)
+        if addErr!=nil {
+            LogRunes("SecondTask readd task fail", addErr)
+        }
+    }
+    
     //执行
     RunDetailTask(kid, kd.Command)
 
-    //若是ticker,重新加入
-    if kd.Type=="ticker" && (kd.Limit==0 || (kd.Limit>0 && (kd.Limit-1)>kd.Run_num )) {
-
-    }
-
+    res,err = true,nil
     return res,err
 }
 
@@ -181,6 +195,11 @@ func RunSecondTask(zd redis.Z, now_mic float64) (bool,error) {
 func RunDetailTask(kid string, command string) (bool,error) {
     var res bool
     var err error
+
+
+
+    //解锁
+    _,_ = UnlockTaskDoing(kid)
 
     return res,err
 }
@@ -309,6 +328,10 @@ func ReaddTimerAfterRun(kid string, kt *KtimerTask) (bool, error) {
         }
     }
 
+    if res {
+        LogRunes("readd task", kt)
+    }
+    
     return res,err
 }
 
