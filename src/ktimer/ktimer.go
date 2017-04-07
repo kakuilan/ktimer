@@ -207,6 +207,24 @@ func RunDetailTask(kid string, command string) (bool,error) {
 
     command = strings.TrimSpace(command)
     if(IsUrl(command)) { //执行URL任务
+        tUrl,tPos,tPor,err := ParseTaskUrl(command)
+        if err!=nil {
+            return res,err
+        }
+
+        //curl
+        easy := curl.EasyInit()
+        defer easy.Cleanup()
+
+        easy.Setopt(curl.OPT_URL, tUrl)
+        easy.Setopt(curl.OPT_USERAGENT, SERNAME)
+        easy.Setopt(curl.OPT_TIMEOUT, TASKMAXTIME)
+        easy.Setopt(curl.OPT_PORT, tPor)
+        if tPos!="" {
+            easy.Setopt(curl.OPT_POST, 1)
+            easy.Setopt(curl.OPT_POSTFIELDS, tPos)
+        }
+        easy.Perform()
 
     }else{ //命令行任务
         out,err := RunCmdTask(command, false)
@@ -831,26 +849,28 @@ func RunCmdTask(tsk string, needreturn bool) (string,error) {
 }
 
 //解析任务URL
-func ParseTaskUrl(str string) {
+func ParseTaskUrl(str string) (string,string,int,error) {
     var nUrl,nPos string
+    var nPor int
     var err error
     var pd = &map[string]interface{}{}
 
     u,err := url.Parse(str)
-    fmt.Println(u,err)
-    fmt.Println(u.Scheme, u.Host, u.Path, u.RawQuery)
+    if err!=nil {
+        return nUrl,nPos,nPor,err
+    }
 
-    nUrl = u.Scheme +"://"+ u.Host + u.Path
-    fmt.Println("newUrl", nUrl)
+    if "https"==strings.ToLower(u.Scheme) {
+        nPor = 443
+    }else{
+        nPor = 80
+    }
 
     m,_ := url.ParseQuery(u.RawQuery)
-    fmt.Printf("m map: type[%T] v:%+v\n", m, m)
-
     q := u.Query()
-    fmt.Printf("q map: type[%T] v:%+v\n", q, q)
 
     for k,v := range m {
-        if k=="kt_post" {
+        if k=="kt_post" { //post数据
             q.Del(k)
             err = json.Unmarshal([]byte(v[0]), pd)
             num := len(*pd)
@@ -862,28 +882,13 @@ func ParseTaskUrl(str string) {
                 }
                 nPos = tmpQ.Encode()
             }
-
-            fmt.Println("new post", err, num, nPos)
         }
     }
-
+    
     u.RawQuery = q.Encode()
     nUrl = u.String()
-    
 
-    easy := curl.EasyInit()
-    defer easy.Cleanup()
-
-    easy.Setopt(curl.OPT_URL, nUrl)
-    easy.Setopt(curl.OPT_USERAGENT, SERNAME)
-    easy.Setopt(curl.OPT_TIMEOUT, TASKMAXTIME)
-    easy.Setopt(curl.OPT_POST, 1)
-    easy.Setopt(curl.OPT_POSTFIELDS, "email=abc@qq.com&uname=tcl&submit=1")
-    easy.Perform()
-
-
-
-
+    return nUrl,nPos,nPor,err
 }
 
 

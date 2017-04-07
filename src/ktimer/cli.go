@@ -264,7 +264,8 @@ func CatchCli() {
             //TODO
         case "test" :
             urlStr := "http://192.168.128.130:9558/crontabs/index?page=1&act=test&kt_post={\"abc\":1,\"efg\":\"hah\",\"end\":true}"
-            ParseTaskUrl(urlStr)
+            a,b,c,d := ParseTaskUrl(urlStr)
+            fmt.Println(a,b,c,d)
 
             os.Exit(0)
 		}
