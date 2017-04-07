@@ -11,6 +11,7 @@ https://github.com/siddontang/ledisdb  redis替代
 https://github.com/andelf/go-curl 
 https://github.com/imroc/req 
 https://github.com/shopspring/decimal 
+https://github.com/alecthomas/kingpin 命令行解析
 参考文章
 https://my.oschina.net/u/943306/blog/149395
 https://dave.cheney.net/2013/10/15/how-does-the-go-build-command-work
@@ -40,7 +41,10 @@ http://studygolang.com/articles/5308 request
 http://studygolang.com/articles/6518
 http://stackoverflow.com/questions/33768557/how-to-bind-an-http-client-in-go-to-an-ip-address  golang bind ip
 http://studygolang.com/articles/2300 get post form
-
+http://stackoverflow.com/questions/10781516/how-to-pipe-several-commands-in-go 
+http://stackoverflow.com/questions/7172784/how-to-post-json-data-with-curl-from-terminal-commandline-to-test-spring-rest curl
+http://blog.csdn.net/wzx19840423/article/details/6587370 curl
+https://curl.haxx.se/libcurl/c/curl_easy_setopt.html curl
 ------------------------------------------
 安装git
 yum install git
@@ -264,6 +268,21 @@ GetCurrentTime() int,float32
 生成定时器ID
 MakeTimerId(command string, type string, time int) uint32 
 
+获取任务详情
+GetTaskDetail(kid string) KtaskDetail 
+
+获取任务处理锁
+GetTaskDoingLock(kid string) bool,error 
+
+解锁任务处理
+UnlockTaskDoing(kid string) bool,error
+
+执行命令行任务
+RunCmdTask(tsk string) string,err
+
+执行URL任务
+RunUrlTask(tsk string)
+
 -----------------------------------------
 插件
 
@@ -280,6 +299,8 @@ go get gopkg.in/natefinch/lumberjack.v2
 
 git clone https://github.com/spaolacci/murmur3.git
 go get github.com/spaolacci/murmur3
+
+go get -u github.com/andelf/go-curl
 -----------------------------------------
 http://studygolang.com/articles/2876 url-parse
 获取get参数 
@@ -301,10 +322,38 @@ urlencode未能正常接收参数
 curl --data-urlencode "action=add&type=timer&time=60&limit=9" http://localhost:9558/test
 curl http://127.0.0.1:9510/message/index
 
-web-> command:http://test.com/test?page=1&_get={}&_post={}
+web-> command:http://test.com/test?page=1&kt_post={}
+保留参数kt_post:json
+
+有问题
+GetTaskDetail
+DelTaskDetail
+
+redis ERR max number of clients reached
+http://blog.csdn.net/ijibu/article/details/50151929
+
+rm -rf log/ runtime/ conf.ini
+add -type=timer -time=5 -limit=0 -command="echo hello ktimer"
+add -type=timer -time=5 -limit=0 -command="touch log/test.txt | date >> log/test.txt"
+add -type=timer -time=5 -limit=0 -command="http://192.168.128.130:9558/index/test?page=1&tid=9&kt_post={abc=1&efg=hah&end=true}"
+add -type=ticker -time=5 -limit=0 -command="date >> log/test.txt"
+add -type=ticker -time=2 -limit=0 -command="https://api.afd56.com.cn/crontabs/index?page=1&act=test&kt_get={}&kt_post={}"
+add -type=ticker -time=1 -limit=0 -command="https://www.baidu.com/"
+ZRANGE ktimer:tasks:second47 0 -1 WITHSCORES
+ZRANGE ktimer:tasks:second54 0 -1 WITHSCORES
+HGETALL ktimer:tasks:all
 
 
-CliPara
+
+
+
+
+
+
+
+
+
+
 
 
 
