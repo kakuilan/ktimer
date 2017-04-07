@@ -69,6 +69,8 @@ func CheckRedis() (bool, error) {
 		return res, err
 	}
 
+    defer client.Close()
+
 	return true, err
 }
 
@@ -181,7 +183,7 @@ func ServiceError(msg string, err error) {
 func ServiceException() {
 	if err := recover(); err != nil {
 		fmt.Println(err)
-		LogErres(err)
+        LogErres("panic err:", err)
 		os.Exit(1)
 	}
 }

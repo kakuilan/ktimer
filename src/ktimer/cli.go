@@ -38,6 +38,7 @@ var Commands = []string{
 	"add",
 	"update",
     "list",
+    "test",
 }
 
 //打印帮助信息
@@ -261,6 +262,10 @@ func CatchCli() {
             num,err := MainTimer(now_sec)
             fmt.Println(num,err)
             //TODO
+        case "test" :
+            
+
+            os.Exit(0)
 		}
 
 	}
@@ -293,7 +298,7 @@ func ParseCliArgs() (CliPara,error) {
                     err = errors.New("limit must be integer")
                 }
             case "command" :
-                cp.Command = v
+                cp.Command = strings.TrimSpace(v)
             case "kid" :
                 cp.Kid = v
                 if !IsNumeric(cp.Kid) {

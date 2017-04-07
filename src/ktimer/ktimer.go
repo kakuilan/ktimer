@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+    "os/exec"
 	"github.com/go-redis/redis"
 	"github.com/shopspring/decimal"
 )
@@ -114,6 +115,8 @@ func MainTimer(now_mic float64) (int,error) {
                 runRes,runErr := RunSecondTask(redZ, now_mic)
                 if runRes && runErr==nil {
                     sucNum++
+                }else{
+                    _delTask4Queu(fmt.Sprintf("%s", redZ), redZ.Score)
                 }
             }
 
@@ -187,7 +190,7 @@ func RunSecondTask(zd redis.Z, now_mic float64) (bool,error) {
             LogRunes("SecondTask readd task fail:", addErr)
         }
     }
-    
+
     //执行
     RunDetailTask(kid, kd.Command)
 
@@ -200,7 +203,13 @@ func RunDetailTask(kid string, command string) (bool,error) {
     var res bool
     var err error
 
+    command = strings.TrimSpace(command)
+    if(IsUrl(command)) { //执行URL任务
 
+    }else{ //命令行任务
+        reStr,reErr := RunCmdTask(command)
+        LogRunes("exec command res:", kid, command, reStr, reErr)
+    }
 
     //解锁
     _,_ = UnlockTaskDoing(kid)
@@ -713,7 +722,7 @@ func DelTaskDetail(kid string) (bool, error) {
 
 	str, err := client.HGet(key, kid).Result()
 	if err != nil {
-        fmt.Println("deltaskde", str, err)
+        LogErres("HGet kid err:", kid, err)
 		err = errors.New("kid does not exist")
 		return res, err
 	}
@@ -786,5 +795,11 @@ func UnlockTaskDoing(kid string) (bool,error) {
 //浮点数比较>=
 func GreaterOrEqual(a,b float64) bool {
     return math.Max(a,b) ==a || math.Abs(a-b) < 0.000001
+}
+
+//执行命令行任务
+func RunCmdTask(task string) (string,error) {
+    out,err := exec.Command("bash", "-c", task).Output()
+    return string(out),err
 }
 
