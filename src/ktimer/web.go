@@ -112,7 +112,7 @@ func WebContainer() {
 //定义http请求的处理方法
 func WebHandler(w http.ResponseWriter, r *http.Request) {
     var err error
-    LogWebes("accept a new request:", getRequestLog(r)) 
+    LogWebes("accept request:", getRequestLog(r)) 
 
     //检查密码是否正确
     timPar := getTimerParams(r)

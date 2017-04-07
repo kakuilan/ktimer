@@ -11,8 +11,10 @@ import (
 	"strings"
 	"time"
     "os/exec"
+    "net/url"
 	"github.com/go-redis/redis"
 	"github.com/shopspring/decimal"
+    curl "github.com/andelf/go-curl"
 )
 
 const (
@@ -23,7 +25,7 @@ const (
 	PUBDATE = "2017.4"
 	AUTHOR  = "kakuilan@163.com"
     LOCKTIME = 2 * time.Second
-//    TASKMAXTIME = 60 * time.Second
+    TASKMAXTIME = 60
 )
 
 //定时器参数数据结构
@@ -207,11 +209,11 @@ func RunDetailTask(kid string, command string) (bool,error) {
     if(IsUrl(command)) { //执行URL任务
 
     }else{ //命令行任务
-        out,err := RunCmdTask(command)
+        out,err := RunCmdTask(command, false)
         if err ==nil {
             res = true
         }
-        LogRunes("exec cl task res:", kid, command, out, err)
+        LogRunes("exec cli task res:", kid, command, out, err)
     }
 
     //解锁
@@ -800,9 +802,88 @@ func GreaterOrEqual(a,b float64) bool {
     return math.Max(a,b) ==a || math.Abs(a-b) < 0.000001
 }
 
-//执行命令行任务
-func RunCmdTask(task string) (string,error) {
-    out,err := exec.Command("bash", "-c", task).Output()
-    return string(out),err
+//执行URL任务
+func RunUrlTask(tsk string, needreturn bool) (string,error) {
+    var res string
+    var err error
+
+
+
+
+
+    return res,err
 }
+
+//执行命令行任务
+func RunCmdTask(tsk string, needreturn bool) (string,error) {
+    var res string
+    var err error
+    var out []byte
+
+    if needreturn { //需要返回
+        out,err = exec.Command("/bin/bash", "-c", tsk).Output()
+        res = Substr(string(out), 0, 1024)
+    }else{
+        err = exec.Command("/bin/bash", "-c", tsk).Start()
+    }
+ 
+    return res,err
+}
+
+//解析任务URL
+func ParseTaskUrl(str string) {
+    var nUrl,nPos string
+    var err error
+    var pd = &map[string]interface{}{}
+
+    u,err := url.Parse(str)
+    fmt.Println(u,err)
+    fmt.Println(u.Scheme, u.Host, u.Path, u.RawQuery)
+
+    nUrl = u.Scheme +"://"+ u.Host + u.Path
+    fmt.Println("newUrl", nUrl)
+
+    m,_ := url.ParseQuery(u.RawQuery)
+    fmt.Printf("m map: type[%T] v:%+v\n", m, m)
+
+    q := u.Query()
+    fmt.Printf("q map: type[%T] v:%+v\n", q, q)
+
+    for k,v := range m {
+        if k=="kt_post" {
+            q.Del(k)
+            err = json.Unmarshal([]byte(v[0]), pd)
+            num := len(*pd)
+            if err==nil && num >0 {
+                tmpU,_ := url.Parse(nPos)
+                tmpQ := tmpU.Query()
+                for pk,pv := range *pd {
+                    tmpQ.Add(pk, fmt.Sprintf("%v", pv))
+                }
+                nPos = tmpQ.Encode()
+            }
+
+            fmt.Println("new post", err, num, nPos)
+        }
+    }
+
+    u.RawQuery = q.Encode()
+    nUrl = u.String()
+    
+
+    easy := curl.EasyInit()
+    defer easy.Cleanup()
+
+    easy.Setopt(curl.OPT_URL, nUrl)
+    easy.Setopt(curl.OPT_USERAGENT, SERNAME)
+    easy.Setopt(curl.OPT_TIMEOUT, TASKMAXTIME)
+    easy.Setopt(curl.OPT_POST, 1)
+    easy.Setopt(curl.OPT_POSTFIELDS, "email=abc@qq.com&uname=tcl&submit=1")
+    easy.Perform()
+
+
+
+
+}
+
 
