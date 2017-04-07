@@ -207,8 +207,11 @@ func RunDetailTask(kid string, command string) (bool,error) {
     if(IsUrl(command)) { //执行URL任务
 
     }else{ //命令行任务
-        reStr,reErr := RunCmdTask(command)
-        LogRunes("exec command res:", kid, command, reStr, reErr)
+        out,err := RunCmdTask(command)
+        if err ==nil {
+            res = true
+        }
+        LogRunes("exec cl task res:", kid, command, out, err)
     }
 
     //解锁
