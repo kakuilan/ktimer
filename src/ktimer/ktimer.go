@@ -74,6 +74,7 @@ func MainTimer(now_mic float64) (int,error) {
 	var allNum,sucNum int
 	var err error
     var breakQue bool
+    var redZ redis.Z
 
     ms := GetMainSecond(now_mic)
     cnfObj, _ := GetConfObj()
@@ -95,24 +96,28 @@ func MainTimer(now_mic float64) (int,error) {
         zres,err := client.ZRangeWithScores(key, 0, 0).Result()
         zlen := len(zres)
         if err!=nil || zlen ==0 {
-            breakQue = true
+            break
         }else{
             allNum++
-            item := zres[0]
-            zms := GetMainSecond(item.Score)
-            if ms!=zms && GreaterOrEqual(item.Score, now_mic) { //未到执行时间
+            if(redZ == zres[0]) {
+                break
+            }
+
+            redZ = zres[0]
+            zms := GetMainSecond(redZ.Score)
+            if ms!=zms && GreaterOrEqual(redZ.Score, now_mic) { //未到执行时间
                 breakQue = true
-                msg := fmt.Sprintf("not run time, nowtime[%0.6f] nextime[%0.6f] item:%v", now_mic, item.Score, item)
+                msg := fmt.Sprintf("not run time, nowtime[%0.6f] nextime[%0.6f] item:%v", now_mic, redZ.Score, redZ)
                 LogRunes(msg)
                 fmt.Println(msg)
             }else{ //执行任务
-                runRes,runErr := RunSecondTask(item, now_mic)
+                runRes,runErr := RunSecondTask(redZ, now_mic)
                 if runRes && runErr==nil {
                     sucNum++
                 }
             }
 
-            fmt.Printf("zstruct type:[%T] %v i[%d]\n", item, item, i)
+            fmt.Printf("zstruct type:[%T] %v i[%d]\n", redZ, redZ, i)
         }
     }
 
@@ -708,6 +713,7 @@ func DelTaskDetail(kid string) (bool, error) {
 
 	str, err := client.HGet(key, kid).Result()
 	if err != nil {
+        fmt.Println("deltaskde", str, err)
 		err = errors.New("kid does not exist")
 		return res, err
 	}
