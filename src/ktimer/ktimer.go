@@ -4,28 +4,28 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	curl "github.com/andelf/go-curl"
+	"github.com/go-redis/redis"
+	"github.com/shopspring/decimal"
 	"math"
 	"murmur3"
+	"net/url"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-    "os/exec"
-    "net/url"
-	"github.com/go-redis/redis"
-	"github.com/shopspring/decimal"
-    curl "github.com/andelf/go-curl"
 )
 
 const (
-	SERNAME = "ktimer"
-	SERDESC = "Ktimer Service"
-	PRODESC = "Ktimer is a simple timer/ticker task manager by golang."
-	VERSION = "0.0.1"
-	PUBDATE = "2017.4"
-	AUTHOR  = "kakuilan@163.com"
-    LOCKTIME = 2 * time.Second
-    TASKMAXTIME = 60
+	SERNAME     = "ktimer"
+	SERDESC     = "Ktimer Service"
+	PRODESC     = "Ktimer is a simple timer/ticker task manager by golang."
+	VERSION     = "0.0.1"
+	PUBDATE     = "2017.4"
+	AUTHOR      = "kakuilan@163.com"
+	LOCKTIME    = 2 * time.Second
+	TASKMAXTIME = 60
 )
 
 //定时器参数数据结构
@@ -44,10 +44,19 @@ type KtimerTask struct {
 	Run_nexttime float64 `json:"run_nexttime"`
 }
 
+//禁止的命令
+var DenyCmd = []string{
+	"rm ",
+	"kil ",
+	"mv ",
+	"wget ",
+	"dd ",
+}
+
 //定时器容器
 func TimerContainer() {
 	go func() {
-        //500毫秒的断续器
+		//500毫秒的断续器
 		mt := time.Tick(time.Millisecond * 500)
 		for c := range mt {
 			pidno, _ := GetServicePidNo()
@@ -57,201 +66,198 @@ func TimerContainer() {
 				LogErres(msg)
 			}
 
-            _,now_mic := GetCurrentTime()
-            msg := fmt.Sprintf("MainTimer begining c[%v], now[%0.6f]", c, now_mic)
-            LogRunes(msg)
-            fmt.Println(msg)
-            func(now_mic float64) {
-                _,runErr := MainTimer(now_mic)
-                if runErr!=nil {
-                    LogErres("MainTimer run error,", runErr)
-                }
-            }(now_mic)
+			_, now_mic := GetCurrentTime()
+			msg := fmt.Sprintf("MainTimer begining c[%v], now[%0.6f]", c, now_mic)
+			LogRunes(msg)
+			fmt.Println(msg)
+			func(now_mic float64) {
+				_, runErr := MainTimer(now_mic)
+				if runErr != nil {
+					LogErres("MainTimer run error,", runErr)
+				}
+			}(now_mic)
 
 		}
 	}()
 }
 
 //主体定时器
-func MainTimer(now_mic float64) (int,error) {
-	var allNum,sucNum int
+func MainTimer(now_mic float64) (int, error) {
+	var allNum, sucNum int
 	var err error
-    var breakQue bool
-    var redZ redis.Z
+	var breakQue bool
+	var redZ redis.Z
 
-    ms := GetMainSecond(now_mic)
-    cnfObj, _ := GetConfObj()
-    prefix := cnfObj.String("task_trun_key")
-    key := prefix + strconv.Itoa(ms)
+	ms := GetMainSecond(now_mic)
+	cnfObj, _ := GetConfObj()
+	prefix := cnfObj.String("task_trun_key")
+	key := prefix + strconv.Itoa(ms)
 
-    client,err := GetRedisClient()
-    if err!=nil {
-        LogErres("MainTimer redis error", err)
-        return sucNum,err
-    }
+	client, err := GetRedisClient()
+	if err != nil {
+		LogErres("MainTimer redis error", err)
+		return sucNum, err
+	}
 
-    i := 0;
-    for {
-        if breakQue {
-            break
-        }
-        i++
-        zres,err := client.ZRangeWithScores(key, 0, 0).Result()
-        zlen := len(zres)
-        if err!=nil || zlen ==0 {
-            break
-        }else{
-            allNum++
-            if(redZ == zres[0]) {
-                break
-            }
+	i := 0
+	for {
+		if breakQue {
+			break
+		}
+		i++
+		zres, err := client.ZRangeWithScores(key, 0, 0).Result()
+		zlen := len(zres)
+		if err != nil || zlen == 0 {
+			break
+		} else {
+			allNum++
+			if redZ == zres[0] {
+				break
+			}
 
-            redZ = zres[0]
-            zms := GetMainSecond(redZ.Score)
-            if ms!=zms && GreaterOrEqual(redZ.Score, now_mic) { //未到执行时间
-                breakQue = true
-                msg := fmt.Sprintf("not run time, nowtime[%0.6f] nextime[%0.6f] item:%v", now_mic, redZ.Score, redZ)
-                LogRunes(msg)
-                fmt.Println(msg)
-            }else{ //执行任务
-                runRes,runErr := RunSecondTask(redZ, now_mic)
-                if runRes && runErr==nil {
-                    sucNum++
-                }else{
-                    _delTask4Queu(fmt.Sprintf("%s", redZ), redZ.Score)
-                }
-            }
+			redZ = zres[0]
+			zms := GetMainSecond(redZ.Score)
+			if ms != zms && GreaterOrEqual(redZ.Score, now_mic) { //未到执行时间
+				breakQue = true
+				msg := fmt.Sprintf("not run time, nowtime[%0.6f] nextime[%0.6f] item:%v", now_mic, redZ.Score, redZ)
+				LogRunes(msg)
+				fmt.Println(msg)
+			} else { //执行任务
+				runRes, runErr := RunSecondTask(redZ, now_mic)
+				if runRes && runErr == nil {
+					sucNum++
+				} else {
+					_delTask4Queu(fmt.Sprintf("%s", redZ), redZ.Score)
+				}
+			}
 
-            fmt.Printf("zstruct type:[%T] %v i[%d]\n", redZ, redZ, i)
-        }
-    }
+			fmt.Printf("zstruct type:[%T] %v i[%d]\n", redZ, redZ, i)
+		}
+	}
 
-    msg := fmt.Sprintf("MainTimer:%0.6f, tasks total:[%d] runed:[%d]", now_mic, allNum, sucNum)
-    LogRunes(msg)
-    fmt.Println(msg)
+	msg := fmt.Sprintf("MainTimer:%0.6f, tasks total:[%d] runed:[%d]", now_mic, allNum, sucNum)
+	LogRunes(msg)
+	fmt.Println(msg)
 
 	return sucNum, err
 }
 
 //执行定时器秒任务
-func RunSecondTask(zd redis.Z, now_mic float64) (bool,error) {
-    var res bool
-    var err error
+func RunSecondTask(zd redis.Z, now_mic float64) (bool, error) {
+	var res bool
+	var err error
 
-    kid := fmt.Sprintf("%v", zd.Member)
-    kd,err := GetTaskDetail(kid)
-    if(err!=nil) {
-        delRes,delErr := DelTaskDetail(kid)
-        LogRunes("SecondTask is not exist,deleted.kid:", kid)
-        fmt.Println("kid not exist", delRes, delErr)
-        return res,err
-    }
+	kid := fmt.Sprintf("%v", zd.Member)
+	kd, err := GetTaskDetail(kid)
+	if err != nil {
+		delRes, delErr := DelTaskDetail(kid)
+		LogRunes("SecondTask is not exist,deleted.kid:", kid)
+		fmt.Println("kid not exist", delRes, delErr)
+		return res, err
+	}
 
-    //获取任务执行锁
-    locked,_ := GetTaskDoingLock(kid)
-    if !locked {
-        LogRunes("SecondTask get doing lock faili.kid:", kid)
-        err = errors.New("get doing lock fail")
-        return res,err
-    }
+	//获取任务执行锁
+	locked, _ := GetTaskDoingLock(kid)
+	if !locked {
+		LogRunes("SecondTask get doing lock faili.kid:", kid)
+		err = errors.New("get doing lock fail")
+		return res, err
+	}
 
-    //达到执行次数限制,删除任务
-    if kd.Type=="ticker" && kd.Limit>0 && kd.Limit <= kd.Run_num {
-        _,_ = UnlockTaskDoing(kid)
-        _,_ = DelTaskDetail(kid)
-        msg := fmt.Sprintf("SecondTask kid[%s] had runed [%d] times,deleted.", zd.Member, kd.Run_num)
-        LogRunes(msg, kd)
-        return res,err
-    }
+	//达到执行次数限制,删除任务
+	if kd.Type == "ticker" && kd.Limit > 0 && kd.Limit <= kd.Run_num {
+		_, _ = UnlockTaskDoing(kid)
+		_, _ = DelTaskDetail(kid)
+		msg := fmt.Sprintf("SecondTask kid[%s] had runed [%d] times,deleted.", zd.Member, kd.Run_num)
+		LogRunes(msg, kd)
+		return res, err
+	}
 
-    //检查是否过期
-    cnfObj, _ := GetConfObj()
-    taskExpire,err := cnfObj.Int("task_expire_limit")
-    if err!=nil {
-        taskExpire,err = 60,nil
-    }
-    if(GreaterOrEqual(now_mic - float64(taskExpire), kd.Run_nexttime)) {
-        _,_ = UnlockTaskDoing(kid)
-        _,_ = DelTaskDetail(kid)
-        msg := fmt.Sprintf("SecondTask is expired. kid[%s] nowtime[%0.6f] nextime[%0.6f] expire[%d],deleted.", kid, now_mic, kd.Run_nexttime, taskExpire)
-        LogRunes(msg)
-        fmt.Println(msg)
-    }
+	//检查是否过期
+	cnfObj, _ := GetConfObj()
+	taskExpire, err := cnfObj.Int("task_expire_limit")
+	if err != nil {
+		taskExpire, err = 60, nil
+	}
+	if GreaterOrEqual(now_mic-float64(taskExpire), kd.Run_nexttime) {
+		_, _ = UnlockTaskDoing(kid)
+		_, _ = DelTaskDetail(kid)
+		msg := fmt.Sprintf("SecondTask is expired. kid[%s] nowtime[%0.6f] nextime[%0.6f] expire[%d],deleted.", kid, now_mic, kd.Run_nexttime, taskExpire)
+		LogRunes(msg)
+		fmt.Println(msg)
+	}
 
-    //执行日志
-    msg := fmt.Sprintf("SecondTask begining:%0.6f kid[%s] time[%0.6f]", now_mic, zd.Member, zd.Score)
-    LogRunes(msg)
+	//执行日志
+	msg := fmt.Sprintf("SecondTask begining:%0.6f kid[%s] time[%0.6f]", now_mic, zd.Member, zd.Score)
+	LogRunes(msg)
 
-    //删除任务
-    _,_ = DelTaskDetail(kid)
+	//删除任务
+	_, _ = DelTaskDetail(kid)
 
-    //若是ticker,重新加入
-    if kd.Type=="ticker" && (kd.Limit==0 || (kd.Limit>0 && (kd.Limit-1)>kd.Run_num )) {
-        _,addErr := ReaddTimerAfterRun(kid, kd)
-        if addErr!=nil {
-            LogRunes("SecondTask readd task fail:", addErr)
-        }
-    }
+	//若是ticker,重新加入
+	if kd.Type == "ticker" && (kd.Limit == 0 || (kd.Limit > 0 && (kd.Limit-1) > kd.Run_num)) {
+		_, addErr := ReaddTimerAfterRun(kid, kd)
+		if addErr != nil {
+			LogRunes("SecondTask readd task fail:", addErr)
+		}
+	}
 
-    //执行
-    RunDetailTask(kid, kd.Command)
+	//执行
+	RunDetailTask(kid, kd.Command)
 
-    res,err = true,nil
-    return res,err
+	res, err = true, nil
+	return res, err
 }
 
 //执行具体任务
-func RunDetailTask(kid string, command string) (bool,error) {
-    var res bool
-    var err error
+func RunDetailTask(kid string, command string) (bool, error) {
+	var res bool
+	var err error
 
-    command = strings.TrimSpace(command)
-    if(IsUrl(command)) { //执行URL任务
-        tUrl,tPos,tPor,err := ParseTaskUrl(command)
-        if err!=nil {
-            return res,err
-        }
+	command = strings.TrimSpace(command)
+	if IsUrl(command) { //执行URL任务
+		out,err := RunUrlTask(command, true)
+		if err ==nil {
+			res = true
+		}
+		LogRunes("exec url task res:", kid, command, out, err)
+	} else { //命令行任务
+		isDeny := false
+		for _, cmd := range DenyCmd {
+			if strings.Index(command, cmd) != -1 {
+				isDeny = true
+				err = errors.New("task contains deny cmd:" + cmd)
+				break
+			}
+		}
 
-        //curl
-        easy := curl.EasyInit()
-        defer easy.Cleanup()
+		if !isDeny {
+			out, err := RunCmdTask(command, false)
+			if err == nil {
+				res = true
+			}
+			LogRunes("exec cli task res:", kid, command, out, err)
+		}
+	}
 
-        easy.Setopt(curl.OPT_URL, tUrl)
-        easy.Setopt(curl.OPT_USERAGENT, SERNAME)
-        easy.Setopt(curl.OPT_TIMEOUT, TASKMAXTIME)
-        easy.Setopt(curl.OPT_PORT, tPor)
-        if tPos!="" {
-            easy.Setopt(curl.OPT_POST, 1)
-            easy.Setopt(curl.OPT_POSTFIELDS, tPos)
-        }
-        easy.Perform()
+	//解锁
+	_, _ = UnlockTaskDoing(kid)
 
-    }else{ //命令行任务
-        out,err := RunCmdTask(command, false)
-        if err ==nil {
-            res = true
-        }
-        LogRunes("exec cli task res:", kid, command, out, err)
-    }
-
-    //解锁
-    _,_ = UnlockTaskDoing(kid)
-
-    return res,err
+	return res, err
 }
 
 //加入定时器
 func AddTimer(td *KtimerData) (bool, string, *KtimerTask, error) {
 	var res bool
 	var err error
-    var kid string
+	var kid string
 	var kt = &KtimerTask{}
 
 	if td.Command == "" {
 		err = errors.New("command is empty")
 		return res, kid, kt, err
 	}
- 
+
 	if td.Type != "timer" && td.Type != "ticker" {
 		err = errors.New("type is error")
 		return res, kid, kt, err
@@ -293,20 +299,20 @@ func AddTimer(td *KtimerData) (bool, string, *KtimerTask, error) {
 	_, kid = MakeTaskKey(td.Command, td.Type, td.Time)
 	secNum := GetMainSecond(kt.Run_nexttime)
 	jsonRes, err := json.Marshal(*kt)
-    if err!=nil {
-        err = errors.New("task detail json encode fail")
-        return res,kid,kt,err
-    }
+	if err != nil {
+		err = errors.New("task detail json encode fail")
+		return res, kid, kt, err
+	}
 
 	res, err = _addTask2Pool(kid, jsonRes)
 	if err == nil {
-	    res, err = _addTask2Queu(kid, kt.Run_nexttime, secNum)
-        if err!=nil {
-		    _, _ = _delTask4Pool(kid)
-        }
+		res, err = _addTask2Queu(kid, kt.Run_nexttime, secNum)
+		if err != nil {
+			_, _ = _delTask4Pool(kid)
+		}
 	}
 	if res {
-        LogRunes("add new task:", kid, kt)
+		LogRunes("add new task:", kid, kt)
 	}
 
 	return res, kid, kt, err
@@ -314,68 +320,68 @@ func AddTimer(td *KtimerData) (bool, string, *KtimerTask, error) {
 
 //执行后重新添加定时任务
 func ReaddTimerAfterRun(kid string, kt *KtimerTask) (bool, error) {
-    var res bool
-    var err error
+	var res bool
+	var err error
 
-    kid = strings.TrimSpace(kid)
-    if kid=="" {
-        err = errors.New("kid is empty")
-        return res,err
-    }else if !IsNumeric(kid) {
-        err = errors.New("kid is not numeric")
-        return res,err
-    }
+	kid = strings.TrimSpace(kid)
+	if kid == "" {
+		err = errors.New("kid is empty")
+		return res, err
+	} else if !IsNumeric(kid) {
+		err = errors.New("kid is not numeric")
+		return res, err
+	}
 
-    kt.Run_num++
-    if kt.Type!="ticker" || (kt.Limit>0 && kt.Run_num>=kt.Limit) {
-        err = errors.New("task is not ticker or number limit")
-        return res,err
-    }
+	kt.Run_num++
+	if kt.Type != "ticker" || (kt.Limit > 0 && kt.Run_num >= kt.Limit) {
+		err = errors.New("task is not ticker or number limit")
+		return res, err
+	}
 
 	now_sec, now_mic := GetCurrentTime()
 	maxSeconds, maxTimestamp, err := GetSysTimestampLimit()
 	if err != nil {
 		err = errors.New("conf task_max_day is error")
-		return res,err
+		return res, err
 	} else if kt.Time <= maxSeconds {
 		kt.Run_nexttime = float64(kt.Time) + now_mic
 	} else if kt.Time > maxSeconds && kt.Time < now_sec {
 		err = errors.New("time as second cannot >" + strconv.Itoa(maxSeconds))
-		return res,err
+		return res, err
 	} else if kt.Time >= now_sec && kt.Time <= maxTimestamp {
 		kt.Run_nexttime = float64(kt.Time)
 	} else {
 		err = errors.New("time as timestamp cannot>" + strconv.Itoa(maxTimestamp))
-		return res,err
+		return res, err
 	}
 
-    secNum := GetMainSecond(kt.Run_nexttime)
-    jsonRes,err := json.Marshal(*kt)
-    if err!=nil {
-        err = errors.New("task detail json encode fail")
-        return res,err
-    }
+	secNum := GetMainSecond(kt.Run_nexttime)
+	jsonRes, err := json.Marshal(*kt)
+	if err != nil {
+		err = errors.New("task detail json encode fail")
+		return res, err
+	}
 
-    res,err = _addTask2Pool(kid, jsonRes)
-    if err==nil {
-        res,err = _addTask2Queu(kid, kt.Run_nexttime, secNum)
-        if err!=nil {
-            _, _ = _delTask4Pool(kid)
-        }
-    }
+	res, err = _addTask2Pool(kid, jsonRes)
+	if err == nil {
+		res, err = _addTask2Queu(kid, kt.Run_nexttime, secNum)
+		if err != nil {
+			_, _ = _delTask4Pool(kid)
+		}
+	}
 
-    if res {
-        LogRunes("readd task:", kid, kt)
-    }
-    
-    return res,err
+	if res {
+		LogRunes("readd task:", kid, kt)
+	}
+
+	return res, err
 }
 
 //删除定时器
 func DelTimer(kid string) (bool, error) {
 	res, err := DelTaskDetail(kid)
 	if res {
-        LogRunes("del a task:", kid)
+		LogRunes("del a task:", kid)
 	}
 
 	return res, err
@@ -466,10 +472,9 @@ func _delTask4Queu(kid string, nextime float64) (bool, error) {
 	return res, err
 }
 
-
 //更新定时器
 func UpdateTimer(oldkid string, kd *KtimerData) (bool, string, *KtimerTask, error) {
-    var res bool
+	var res bool
 	var newkid string
 	var kt = &KtimerTask{}
 	var err error
@@ -483,43 +488,43 @@ func UpdateTimer(oldkid string, kd *KtimerData) (bool, string, *KtimerTask, erro
 		return res, newkid, kt, err
 	}
 
-    //检查新的数据
-    if kd.Type=="" && kd.Time==0 && kd.Limit==0 && kd.Command=="" {
-        err = errors.New("no parameters to update")
-        return res, newkid, kt, err
-    }
+	//检查新的数据
+	if kd.Type == "" && kd.Time == 0 && kd.Limit == 0 && kd.Command == "" {
+		err = errors.New("no parameters to update")
+		return res, newkid, kt, err
+	}
 
-    kt,err = GetTaskDetail(oldkid)
-    if err!=nil {
-        return res, newkid, kt, err
-    }
+	kt, err = GetTaskDetail(oldkid)
+	if err != nil {
+		return res, newkid, kt, err
+	}
 
-    if kd.Type =="" {
-        kd.Type = kt.Type
-    }
-    if kd.Time == 0 {
-        kd.Time = kt.Time
-    }
-    if kd.Limit == 0 {
-        kd.Limit = kt.Limit
-    }
-    if kd.Command == "" {
-        kd.Command = kt.Command
-    }
+	if kd.Type == "" {
+		kd.Type = kt.Type
+	}
+	if kd.Time == 0 {
+		kd.Time = kt.Time
+	}
+	if kd.Limit == 0 {
+		kd.Limit = kt.Limit
+	}
+	if kd.Command == "" {
+		kd.Command = kt.Command
+	}
 
-    //是否会生成新的任务
-    _,newkid = MakeTaskKey(kd.Command, kd.Type, kd.Time)
-    if oldkid!=newkid {
-        _,_ = DelTimer(oldkid)
-    }else{
-        _,_ = _delTask4Queu(oldkid, kt.Run_nexttime)
-    }
+	//是否会生成新的任务
+	_, newkid = MakeTaskKey(kd.Command, kd.Type, kd.Time)
+	if oldkid != newkid {
+		_, _ = DelTimer(oldkid)
+	} else {
+		_, _ = _delTask4Queu(oldkid, kt.Run_nexttime)
+	}
 
-    res,newkid,kt,err = AddTimer(kd)
-    if err!=nil {
-        return res, newkid, kt, err
-    }
- 
+	res, newkid, kt, err = AddTimer(kd)
+	if err != nil {
+		return res, newkid, kt, err
+	}
+
 	return res, newkid, kt, err
 }
 
@@ -570,8 +575,6 @@ func ClearTimer() (bool, error) {
 
 	return res, err
 }
-
-
 
 //从配置获取最大秒数
 func GetSysTimestampLimit() (int, int, error) {
@@ -676,8 +679,9 @@ func MakeTaskKey(command string, ttype string, ttime int) (uint32, string) {
 //检查字符串是否URL
 func IsUrl(str string) bool {
 	var res bool
-	reg, _ := regexp.Compile(`^[a-zA-Z]+://(\w+(-\w+)*)(\.(\w+(-\w+)*))*(\?\s*)?$`)
+	reg,_ := regexp.Compile(`^http[s]?:\/\/(.*)(\?\s*)?`)
 	res = reg.Match([]byte(str))
+
 	return res
 }
 
@@ -745,7 +749,7 @@ func DelTaskDetail(kid string) (bool, error) {
 
 	str, err := client.HGet(key, kid).Result()
 	if err != nil {
-        LogErres("HGet kid err:", kid, err)
+		LogErres("HGet kid err:", kid, err)
 		err = errors.New("kid does not exist")
 		return res, err
 	}
@@ -762,133 +766,165 @@ func DelTaskDetail(kid string) (bool, error) {
 }
 
 //获取任务处理锁
-func GetTaskDoingLock(kid string) (bool,error) {
-    var res bool
-    var err error
+func GetTaskDoingLock(kid string) (bool, error) {
+	var res bool
+	var err error
 
-    if kid=="" {
-        err = errors.New("kid is empty")
-        return res,err
-    }
+	if kid == "" {
+		err = errors.New("kid is empty")
+		return res, err
+	}
 
-    cnfObj, _ := GetConfObj()
-    prefix := cnfObj.String("task_lcok_key")
-    key := prefix + kid
+	cnfObj, _ := GetConfObj()
+	prefix := cnfObj.String("task_lcok_key")
+	key := prefix + kid
 
-    client, err := GetRedisClient()
-    if err!=nil {
-        return res,err
-    }
+	client, err := GetRedisClient()
+	if err != nil {
+		return res, err
+	}
 
-    err = client.SetNX(key, 1, LOCKTIME).Err()
-    if err==nil {
-        res = true
-    }
+	err = client.SetNX(key, 1, LOCKTIME).Err()
+	if err == nil {
+		res = true
+	}
 
-    return res,err
+	return res, err
 }
 
 //解锁任务处理
-func UnlockTaskDoing(kid string) (bool,error) {
-    var res bool
-    var err error
+func UnlockTaskDoing(kid string) (bool, error) {
+	var res bool
+	var err error
 
-    if kid=="" {
-        err = errors.New("kid is empty")
-        return res,err
-    }
+	if kid == "" {
+		err = errors.New("kid is empty")
+		return res, err
+	}
 
-    cnfObj, _ := GetConfObj()
-    prefix := cnfObj.String("task_lcok_key")
-    key := prefix + kid
+	cnfObj, _ := GetConfObj()
+	prefix := cnfObj.String("task_lcok_key")
+	key := prefix + kid
 
-    client, err := GetRedisClient()
-    if err!=nil {
-        return res,err
-    }
+	client, err := GetRedisClient()
+	if err != nil {
+		return res, err
+	}
 
-    err = client.Del(key).Err()
-    if err==nil {
-        res = true
-    }
+	err = client.Del(key).Err()
+	if err == nil {
+		res = true
+	}
 
-    return res,err
+	return res, err
 }
 
 //浮点数比较>=
-func GreaterOrEqual(a,b float64) bool {
-    return math.Max(a,b) ==a || math.Abs(a-b) < 0.000001
+func GreaterOrEqual(a, b float64) bool {
+	return math.Max(a, b) == a || math.Abs(a-b) < 0.000001
 }
 
 //执行URL任务
-func RunUrlTask(tsk string, needreturn bool) (string,error) {
-    var res string
-    var err error
+func RunUrlTask(tsk string, needreturn bool) (string, error) {
+	var res string
+	var err error
 
+	tUrl,tPos,tPor,err := ParseTaskUrl(tsk)
+	if err!=nil {
+		return res,err
+	}
 
+	fmt.Println(tPor)
+	//curl
+	easy := curl.EasyInit()
+	defer easy.Cleanup()
 
+	easy.Setopt(curl.OPT_VERBOSE, 1)
+	easy.Setopt(curl.OPT_URL, tUrl)
+	easy.Setopt(curl.OPT_USERAGENT, SERNAME)
+	easy.Setopt(curl.OPT_TIMEOUT, TASKMAXTIME)
+	easy.Setopt(curl.OPT_PORT, tPor)
+	if tPos!="" {
+		 easy.Setopt(curl.OPT_POST, 1)
+		 easy.Setopt(curl.OPT_POSTFIELDS, tPos)
+	}
+	if err = easy.Perform(); err == nil {
+		if needreturn {
+			buf := make([]byte, 1024)
+			easy.Send([]byte("HEAD / HTTP/1.0\r\nReferer: "+tUrl+"\r\n\r\n"))
+			time.Sleep(1000 * time.Millisecond)
+			num,err := easy.Recv(buf)
+			if err== nil {
+				res = string(buf[:num])
+			}
+		}
+	}
 
-
-    return res,err
+	return res, err
 }
 
 //执行命令行任务
-func RunCmdTask(tsk string, needreturn bool) (string,error) {
-    var res string
-    var err error
-    var out []byte
+func RunCmdTask(tsk string, needreturn bool) (string, error) {
+	var res string
+	var err error
+	var out []byte
 
-    if needreturn { //需要返回
-        out,err = exec.Command("/bin/bash", "-c", tsk).Output()
-        res = Substr(string(out), 0, 1024)
-    }else{
-        err = exec.Command("/bin/bash", "-c", tsk).Start()
-    }
- 
-    return res,err
+	if needreturn { //需要返回
+		//out,err = exec.Command("/bin/bash", "-c", tsk).Output()
+		//res = Substr(string(out), 0, 1024)
+		out, err = exec.Command("/bin/bash", "-c", tsk).CombinedOutput()
+	} else {
+		//err = exec.Command("/bin/bash", "-c", tsk).Run()
+		out, err = exec.Command("/bin/bash", "-c", tsk).CombinedOutput()
+	}
+	res = string(out)
+
+	return res, err
 }
 
 //解析任务URL
-func ParseTaskUrl(str string) (string,string,int,error) {
-    var nUrl,nPos string
-    var nPor int
-    var err error
-    var pd = &map[string]interface{}{}
+func ParseTaskUrl(str string) (string, string, int, error) {
+	var nUrl, nPos string
+	var nPor int
+	var err error
+	var pd = &map[string]interface{}{}
 
-    u,err := url.Parse(str)
-    if err!=nil {
-        return nUrl,nPos,nPor,err
-    }
+	u, err := url.Parse(str)
+	if err != nil {
+		return nUrl, nPos, nPor, err
+	}
 
-    if "https"==strings.ToLower(u.Scheme) {
-        nPor = 443
-    }else{
-        nPor = 80
-    }
+	//端口号
+	hs := strings.Split(u.Host, ":")
+	if len(hs)==2 {
+		nPor,_ = strconv.Atoi(hs[1])
+	}else if "https" == strings.ToLower(u.Scheme) {
+		nPor = 443
+	} else {
+		nPor = 80
+	}
 
-    m,_ := url.ParseQuery(u.RawQuery)
-    q := u.Query()
+	m, _ := url.ParseQuery(u.RawQuery)
+	q := u.Query()
 
-    for k,v := range m {
-        if k=="kt_post" { //post数据
-            q.Del(k)
-            err = json.Unmarshal([]byte(v[0]), pd)
-            num := len(*pd)
-            if err==nil && num >0 {
-                tmpU,_ := url.Parse(nPos)
-                tmpQ := tmpU.Query()
-                for pk,pv := range *pd {
-                    tmpQ.Add(pk, fmt.Sprintf("%v", pv))
-                }
-                nPos = tmpQ.Encode()
-            }
-        }
-    }
-    
-    u.RawQuery = q.Encode()
-    nUrl = u.String()
+	for k, v := range m {
+		if k == "kt_post" { //post数据
+			q.Del(k)
+			err = json.Unmarshal([]byte(v[0]), pd)
+			num := len(*pd)
+			if err == nil && num > 0 {
+				tmpU, _ := url.Parse(nPos)
+				tmpQ := tmpU.Query()
+				for pk, pv := range *pd {
+					tmpQ.Add(pk, fmt.Sprintf("%v", pv))
+				}
+				nPos = tmpQ.Encode()
+			}
+		}
+	}
 
-    return nUrl,nPos,nPor,err
+	u.RawQuery = q.Encode()
+	nUrl = u.String()
+
+	return nUrl, nPos, nPor, err
 }
-
-

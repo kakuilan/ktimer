@@ -266,6 +266,11 @@ func CatchCli() {
             urlStr := "http://192.168.128.130:9558/crontabs/index?page=1&act=test&kt_post={\"abc\":1,\"efg\":\"hah\",\"end\":true}"
             a,b,c,d := ParseTaskUrl(urlStr)
             fmt.Println(a,b,c,d)
+			str := "https://api.afd56.com.cn/crontabs/index?"
+			//str := "http://127.0.0.1:9558/index/test?page=1&tid=9&kt_post={abc=1&efg=hah&end=true}"
+			res := IsUrl(str)
+			fmt.Println(str, res)
+
 
             os.Exit(0)
 		}
