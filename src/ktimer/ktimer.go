@@ -216,8 +216,8 @@ func RunDetailTask(kid string, command string) (bool, error) {
 
 	command = strings.TrimSpace(command)
 	if IsUrl(command) { //执行URL任务
-		out,err := RunUrlTask(command, true)
-		if err ==nil {
+		out, err := RunUrlTask(command, true)
+		if err == nil {
 			res = true
 		}
 		LogRunes("exec url task res:", kid, command, out, err)
@@ -679,7 +679,7 @@ func MakeTaskKey(command string, ttype string, ttime int) (uint32, string) {
 //检查字符串是否URL
 func IsUrl(str string) bool {
 	var res bool
-	reg,_ := regexp.Compile(`^http[s]?:\/\/(.*)(\?\s*)?`)
+	reg, _ := regexp.Compile(`^http[s]?:\/\/(.*)(\?\s*)?`)
 	res = reg.Match([]byte(str))
 
 	return res
@@ -829,12 +829,11 @@ func RunUrlTask(tsk string, needreturn bool) (string, error) {
 	var res string
 	var err error
 
-	tUrl,tPos,tPor,err := ParseTaskUrl(tsk)
-	if err!=nil {
-		return res,err
+	tUrl, tPos, tPor, err := ParseTaskUrl(tsk)
+	if err != nil {
+		return res, err
 	}
 
-	fmt.Println(tPor)
 	//curl
 	easy := curl.EasyInit()
 	defer easy.Cleanup()
@@ -844,21 +843,21 @@ func RunUrlTask(tsk string, needreturn bool) (string, error) {
 	easy.Setopt(curl.OPT_USERAGENT, SERNAME)
 	easy.Setopt(curl.OPT_TIMEOUT, TASKMAXTIME)
 	easy.Setopt(curl.OPT_PORT, tPor)
-	if tPos!="" {
-		 easy.Setopt(curl.OPT_POST, 1)
-		 easy.Setopt(curl.OPT_POSTFIELDS, tPos)
+	if tPos != "" {
+		easy.Setopt(curl.OPT_POST, 1)
+		easy.Setopt(curl.OPT_POSTFIELDS, tPos)
+		easy.Setopt(curl.OPT_POSTFIELDSIZE, len(tPos))
 	}
-	if err = easy.Perform(); err == nil {
-		if needreturn {
-			buf := make([]byte, 1024)
-			easy.Send([]byte("HEAD / HTTP/1.0\r\nReferer: "+tUrl+"\r\n\r\n"))
-			time.Sleep(1000 * time.Millisecond)
-			num,err := easy.Recv(buf)
-			if err== nil {
-				res = string(buf[:num])
-			}
-		}
+	if needreturn {
+		easy.Setopt(curl.OPT_WRITEFUNCTION, func(ptr []byte, _ interface{}) bool {
+			res += string(ptr)
+			return true
+		})
 	}
+
+	if err = easy.Perform(); err==nil {
+        res = Substr(res, 0, 1024)
+    }
 
 	return res, err
 }
@@ -870,14 +869,11 @@ func RunCmdTask(tsk string, needreturn bool) (string, error) {
 	var out []byte
 
 	if needreturn { //需要返回
-		//out,err = exec.Command("/bin/bash", "-c", tsk).Output()
-		//res = Substr(string(out), 0, 1024)
 		out, err = exec.Command("/bin/bash", "-c", tsk).CombinedOutput()
-	} else {
-		//err = exec.Command("/bin/bash", "-c", tsk).Run()
-		out, err = exec.Command("/bin/bash", "-c", tsk).CombinedOutput()
+	    res = Substr(string(out), 0, 1024)
+    } else {
+		err = exec.Command("/bin/bash", "-c", tsk).Start()
 	}
-	res = string(out)
 
 	return res, err
 }
@@ -896,9 +892,9 @@ func ParseTaskUrl(str string) (string, string, int, error) {
 
 	//端口号
 	hs := strings.Split(u.Host, ":")
-	if len(hs)==2 {
-		nPor,_ = strconv.Atoi(hs[1])
-	}else if "https" == strings.ToLower(u.Scheme) {
+	if len(hs) == 2 {
+		nPor, _ = strconv.Atoi(hs[1])
+	} else if "https" == strings.ToLower(u.Scheme) {
 		nPor = 443
 	} else {
 		nPor = 80
@@ -910,15 +906,17 @@ func ParseTaskUrl(str string) (string, string, int, error) {
 	for k, v := range m {
 		if k == "kt_post" { //post数据
 			q.Del(k)
-			err = json.Unmarshal([]byte(v[0]), pd)
-			num := len(*pd)
-			if err == nil && num > 0 {
-				tmpU, _ := url.Parse(nPos)
-				tmpQ := tmpU.Query()
-				for pk, pv := range *pd {
-					tmpQ.Add(pk, fmt.Sprintf("%v", pv))
+			if v[0] != "" {
+				err = json.Unmarshal([]byte(v[0]), pd)
+				num := len(*pd)
+				if err == nil && num > 0 {
+					tmpU, _ := url.Parse(nPos)
+					tmpQ := tmpU.Query()
+					for pk, pv := range *pd {
+						tmpQ.Add(pk, fmt.Sprintf("%v", pv))
+					}
+					nPos = tmpQ.Encode()
 				}
-				nPos = tmpQ.Encode()
 			}
 		}
 	}
