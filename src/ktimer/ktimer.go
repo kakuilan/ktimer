@@ -907,7 +907,8 @@ func ParseTaskUrl(str string) (string, string, int, error) {
 		if k == "kt_post" { //post数据
 			q.Del(k)
 			if v[0] != "" {
-				err = json.Unmarshal([]byte(v[0]), pd)
+                str := strings.Trim(v[0], "\"' ")
+				err = json.Unmarshal([]byte(str), pd)
 				num := len(*pd)
 				if err == nil && num > 0 {
 					tmpU, _ := url.Parse(nPos)
@@ -916,7 +917,9 @@ func ParseTaskUrl(str string) (string, string, int, error) {
 						tmpQ.Add(pk, fmt.Sprintf("%v", pv))
 					}
 					nPos = tmpQ.Encode()
-				}
+				}else{
+                    //LogRunes("json error.", "ori:", u.RawQuery, m, "str:", str, "err:", err)
+                }
 			}
 		}
 	}

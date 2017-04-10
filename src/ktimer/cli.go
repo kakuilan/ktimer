@@ -283,7 +283,7 @@ func CatchCli() {
 func ParseCliArgs() (CliPara,error) {
     var err error
     cp := CliPara{}
-    reg := regexp.MustCompile(`[-]{0,2}([a-z]+)=['"]?([^"]*)['"]?`)
+    reg := regexp.MustCompile(`[-]{0,2}([a-z]+)=['"]?(.*)['"]?`)
     for i,arg := range os.Args {
         if i>1 && (strings.HasPrefix(arg, "-") || strings.HasPrefix(arg, "--") || strings.Index(arg,"=")>0 ) {
             mat := reg.FindAllStringSubmatch(arg, -1)
@@ -324,7 +324,7 @@ func ParseCliArgs() (CliPara,error) {
             }
         }
     }
-
+    
     return cp,err
 }
 
