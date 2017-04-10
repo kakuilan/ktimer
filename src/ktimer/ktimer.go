@@ -151,6 +151,9 @@ func RunSecondTask(zd redis.Z, now_mic float64) (bool, error) {
 	kd, err := GetTaskDetail(kid)
 	if err != nil {
 		delRes, delErr := DelTaskDetail(kid)
+        if delErr!=nil {
+            _,_ = _delTask4Queu(kid, zd.Score)
+        }
 		LogRunes("SecondTask is not exist,deleted.kid:", kid)
 		fmt.Println("kid not exist", delRes, delErr)
 		return res, err
