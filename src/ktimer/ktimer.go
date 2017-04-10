@@ -261,7 +261,9 @@ func AddTimer(td *KtimerData) (bool, string, *KtimerTask, error) {
 		return res, kid, kt, err
 	}
 
-	if td.Type != "timer" && td.Type != "ticker" {
+    if td.Type=="" {
+        td.Type = "timer"
+    }else if td.Type != "timer" && td.Type != "ticker" {
 		err = errors.New("type is error")
 		return res, kid, kt, err
 	}

@@ -8,6 +8,8 @@ import (
     "context"
     "syscall"
     "strings"
+    "strconv"
+    "errors"
     "encoding/json"
 )
 
@@ -53,11 +55,11 @@ var ExcParChat = [...]string{
 
 //允许的动作
 var Actions = []string {
-    "add",
+    "count",
     "get",
     "del",
+    "add",
     "update",
-    "count",
     "list",
 }
 
@@ -121,35 +123,98 @@ func WebContainer() {
 }
 
 //定义http请求的处理方法
-func WebHandler(w http.ResponseWriter, r *http.Request) {
+func WebHandler(w http.ResponseWriter, r *http.Request)  {
     var err error
-    var isAct bool
+    var isAct,res bool
+    var timPar TimerParm
+    var pwd,ac string
+    var num int
+    var tsk *KtimerTask
+    var kd *KtimerData
+
     LogWebes("accept request:", getRequestLog(r)) 
 
-    //检查密码是否正确
-    timPar := getTimerParams(r)
     CnfObj, err = GetConfObj()
     if err!=nil {
         LogWebes("web server accept request has err:", err)
-        outputJson(w, false, 500, "web server has error.", "")
+        outputJson(w, false, 500, "web server conf error.", "")
+        goto ENDHERE
     }
-    pwd := CnfObj.String("web::web.passwd")
-    if(timPar.Passwd != pwd && false) {
+
+    //检查密码是否正确
+    timPar,err = getTimerParams(r)
+    pwd = CnfObj.String("web::web.passwd")
+    if(pwd!="" && timPar.Passwd != pwd && false) {
         outputJson(w, false, 401, "You are not authorized to access", "")
+        goto ENDHERE
+    }else if err!=nil {
+        outputJson(w, false, 200, "fail", err.Error())
+        goto ENDHERE
     }else{
-        for _,ac := range Actions {
+        for _,ac = range Actions {
             if ac == timPar.Action {
                 isAct = true
                 break
             }
         }
- 
+
         if timPar.Action=="" || !isAct {
-            outputJson(w, false, 200, "parameter act missing or error", "")
+            outputJson(w, false, 200, "parameter action missing or error", res)
+            goto ENDHERE
         }else{
-            
+            switch timPar.Action {
+            case "count" :
+                num,err = CountTimer()
+                if err!=nil {
+                    outputJson(w, false, 200, "fail", err.Error())
+                }else{
+                    outputJson(w, true, 200, "success", num)
+                }
+            case "get" :
+                if timPar.Kid=="" || !IsNumeric(timPar.Kid)  {
+                    outputJson(w, false, 200, "parameter kid missing or error", "")
+                }else{
+                    tsk,err = GetTimer(timPar.Kid)
+                    if err!=nil {
+                        outputJson(w, false, 200, "fail", err.Error())
+                    }else{
+                        outputJson(w, true, 200, "success", tsk)
+                    }
+                }
+            case "del" :
+                if timPar.Kid=="" || !IsNumeric(timPar.Kid)  {
+                    outputJson(w, false, 200, "parameter kid missing or error", "")
+                }else{
+                    res,err := DelTimer(timPar.Kid)
+                    if !res || err!=nil {
+                        outputJson(w, false, 200, "fail", err.Error())
+                    }else{
+                        outputJson(w, true, 200, "success", "")
+                    }
+                }
+            case "add" :
+                if timPar.Command=="" {
+                    outputJson(w, false, 200, "parameter command missing or error", "")
+                    goto ENDHERE
+                }
+                kd = &KtimerData{}
+                kd.Type = timPar.Type 
+                kd.Time,_ = strconv.Atoi(timPar.Time)
+                kd.Limit,_ = strconv.Atoi(timPar.Limit)
+                kd.Command = timPar.Command
+
+                res,kid,_,err := AddTimer(kd)
+                if !res || err!=nil {
+                    outputJson(w, false, 200, "fail", err.Error())
+                }else{
+                    outputJson(w, true, 200, "success", kid)
+                }
+
+            }
         }
     }
+
+    ENDHERE:
 }
 
 //输出json
@@ -185,7 +250,7 @@ func getFullUrl(r *http.Request) string {
 
 //获取头信息
 func getHeader(r *http.Request) interface{} {
-    m := make(map[string] interface{}) 
+    m := make(map[string] interface{})
     for k,v := range r.Header {
         key := strings.ToLower(k)
         if key=="referer" || key== "user-agent" {
@@ -199,8 +264,8 @@ func getHeader(r *http.Request) interface{} {
 //获取请求参数
 func getRequestParams(r *http.Request) interface{} {
     var pos int
-    m := make(map[string] interface{}) 
-    
+    m := make(map[string] interface{})
+
     r.ParseForm()
     for k,v := range r.Form {
         for _,chr := range ExcParChat {
@@ -208,7 +273,7 @@ func getRequestParams(r *http.Request) interface{} {
             if pos!=-1 {
                 break
             }
-        } 
+        }
 
         if pos!=-1 {
             continue
@@ -221,39 +286,61 @@ func getRequestParams(r *http.Request) interface{} {
 }
 
 //获取定时器的参数
-func getTimerParams(r *http.Request) TimerParm {
+func getTimerParams(r *http.Request) (TimerParm,error) {
     var tp TimerParm
+    var err error
     r.ParseForm()
 
     if len(r.Form["action"])>0 {
-        tp.Action  = r.Form["action"][0]
+        tp.Action  = strings.TrimSpace(r.Form["action"][0])
+        if tp.Action=="" {
+            err = errors.New("action cannot empty")
+        }
     }
     if len(r.Form["type"])>0 {
-        tp.Type = r.Form["type"][0]
+        tp.Type = strings.TrimSpace(r.Form["type"][0])
+        if tp.Type!="" && tp.Type!="timer" && tp.Type!="ticker" {
+            err = errors.New("type is error[timer/ticker]")
+        }
     }
     if len(r.Form["time"])>0 {
-        tp.Time = r.Form["time"][0]
+        tp.Time = strings.TrimSpace(r.Form["time"][0])
+        if tp.Time!="" && !IsNumeric(tp.Time) {
+            err = errors.New("time must be numeric")
+        }
     }
     if len(r.Form["limit"])>0 {
-        tp.Limit = r.Form["limit"][0]
+        tp.Limit = strings.TrimSpace(r.Form["limit"][0])
+        if tp.Limit!="" && !IsNumeric(tp.Limit) {
+            err = errors.New("limit must be numeric")
+        }
     }
     if len(r.Form["command"])>0 {
-        tp.Command = r.Form["command"][0]
+        tp.Command = strings.TrimSpace(r.Form["command"][0])
     }
     if len(r.Form["kid"])>0 {
-        tp.Kid = r.Form["kid"][0]
+        tp.Kid = strings.TrimSpace(r.Form["kid"][0])
+        if tp.Kid!="" && !IsNumeric(tp.Kid) {
+            err = errors.New("kid must be numeric")
+        }
     }
     if len(r.Form["passwd"])>0 {
-        tp.Passwd = r.Form["passwd"][0]
+        tp.Passwd = strings.TrimSpace(r.Form["passwd"][0])
     }
     if len(r.Form["starttime"])>0 {
-        tp.Starttime = r.Form["starttime"][0]
+        tp.Starttime = strings.TrimSpace(r.Form["starttime"][0])
+        if tp.Starttime!="" && !IsNumeric(tp.Starttime) {
+            err = errors.New("starttime must be numeric")
+        }
     }
     if len(r.Form["endtime"])>0 {
-        tp.Endtime = r.Form["endtime"][0]
+        tp.Endtime = strings.TrimSpace(r.Form["endtime"][0])
+        if tp.Endtime!="" && !IsNumeric(tp.Endtime) {
+            err = errors.New("endtime must be numeric")
+        }
     }
 
-    return tp
+    return tp,err
 }
 
 
