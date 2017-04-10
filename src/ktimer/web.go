@@ -51,6 +51,16 @@ var ExcParChat = [...]string{
     ":",
 }
 
+//允许的动作
+var Actions = []string {
+    "add",
+    "get",
+    "del",
+    "update",
+    "count",
+    "list",
+}
+
 
 //WEB容器
 func WebContainer() {
@@ -113,6 +123,7 @@ func WebContainer() {
 //定义http请求的处理方法
 func WebHandler(w http.ResponseWriter, r *http.Request) {
     var err error
+    var isAct bool
     LogWebes("accept request:", getRequestLog(r)) 
 
     //检查密码是否正确
@@ -126,10 +137,18 @@ func WebHandler(w http.ResponseWriter, r *http.Request) {
     if(timPar.Passwd != pwd && false) {
         outputJson(w, false, 401, "You are not authorized to access", "")
     }else{
-        allPar := getRequestParams(r)
-        fmt.Fprintln(w, allPar, timPar)
-        
-        //outputJson(w, true, 200, "success", allPar)
+        for _,ac := range Actions {
+            if ac == timPar.Action {
+                isAct = true
+                break
+            }
+        }
+ 
+        if timPar.Action=="" || !isAct {
+            outputJson(w, false, 200, "parameter act missing or error", "")
+        }else{
+            
+        }
     }
 }
 
