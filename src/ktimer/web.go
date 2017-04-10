@@ -23,6 +23,7 @@ type ReqLog struct {
 //输出结构体
 type OutPut struct {
     Status bool `json:"status"`
+    Code int `json:"code"`
     Data interface{} `json:"data"`
     Msg string `json:"msg"`
 }
@@ -119,20 +120,19 @@ func WebHandler(w http.ResponseWriter, r *http.Request) {
     CnfObj, err = GetConfObj()
     if err!=nil {
         LogWebes("web server accept request has err:", err)
-        outputJson(w, false, "web server has error.", "")
+        outputJson(w, false, 500, "web server has error.", "")
     }
     pwd := CnfObj.String("web::web.passwd")
     if(timPar.Passwd != pwd) {
-        outputJson(w, false, "You are not authorized to access", "")
+        outputJson(w, false, 401, "You are not authorized to access", "")
     }else{
         allPar := getRequestParams(r)
-        outputJson(w, true, "success", allPar)
-        
+        outputJson(w, true, 200, "success", allPar)
     }
 }
 
 //输出json
-func outputJson(w http.ResponseWriter,status bool, msg string, data interface{}) {
+func outputJson(w http.ResponseWriter,status bool, code int, msg string, data interface{}) {
     w.Header().Set("Access-Control-Allow-Origin", "*")
     w.Header().Set("Content-Type", "application/json; charset=UTF-8")
     if data==nil {
@@ -140,6 +140,7 @@ func outputJson(w http.ResponseWriter,status bool, msg string, data interface{})
     }
     res := OutPut{
         Status : status,
+        Code : code,
         Data : data,
         Msg : msg,
     }
