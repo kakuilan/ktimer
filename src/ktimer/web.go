@@ -35,7 +35,7 @@ type TimerParm struct {
     Time string `json:"time"`
     Limit string `json:"limit"`
     Command string `json:"command"`
-    Key string `json:"key"`
+    Kid string `json:"kid"`
     Passwd string `json:"passwd"`
     Starttime string `json:"starttime"`
     Endtime string `json:"endtime"`
@@ -123,11 +123,13 @@ func WebHandler(w http.ResponseWriter, r *http.Request) {
         outputJson(w, false, 500, "web server has error.", "")
     }
     pwd := CnfObj.String("web::web.passwd")
-    if(timPar.Passwd != pwd) {
+    if(timPar.Passwd != pwd && false) {
         outputJson(w, false, 401, "You are not authorized to access", "")
     }else{
         allPar := getRequestParams(r)
-        outputJson(w, true, 200, "success", allPar)
+        fmt.Fprintln(w, allPar, timPar)
+        
+        //outputJson(w, true, 200, "success", allPar)
     }
 }
 
@@ -219,8 +221,8 @@ func getTimerParams(r *http.Request) TimerParm {
     if len(r.Form["command"])>0 {
         tp.Command = r.Form["command"][0]
     }
-    if len(r.Form["key"])>0 {
-        tp.Key = r.Form["key"][0]
+    if len(r.Form["kid"])>0 {
+        tp.Kid = r.Form["kid"][0]
     }
     if len(r.Form["passwd"])>0 {
         tp.Passwd = r.Form["passwd"][0]
