@@ -10,6 +10,7 @@ import (
     "strings"
     "strconv"
     "errors"
+    "regexp"
     "encoding/json"
 )
 
@@ -403,12 +404,17 @@ func getRequestLog(r *http.Request) ReqLog {
     url := getFullUrl(r)
     hea := getHeader(r)
     params := getRequestParams(r)
- 
-    //不记录passwd
-    if _,ok := params["passwd"];ok {
-        params["passwd"] = "***"
-    }
 
+    //不记录passwd
+    reg := regexp.MustCompile(`(?i:passw(or)?d[ ]{0,}=[A-Za-z0-9]+)`)
+    url = reg.ReplaceAllString(url,"passwd=***")
+    for k,_ := range params {
+        reg = regexp.MustCompile(`(?i:passw(or)?d)`)
+        if reg.Match([]byte(k)) {
+            params[k] = "***"
+        }
+    }
+ 
     jsonRes,err := json.Marshal(params)
     par := string(jsonRes)
     if err!= nil{
