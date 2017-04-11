@@ -316,7 +316,7 @@ func getHeader(r *http.Request) interface{} {
 }
 
 //获取请求参数
-func getRequestParams(r *http.Request) interface{} {
+func getRequestParams(r *http.Request) map[string]interface{} {
     var pos int
     m := make(map[string] interface{})
 
@@ -403,6 +403,12 @@ func getRequestLog(r *http.Request) ReqLog {
     url := getFullUrl(r)
     hea := getHeader(r)
     params := getRequestParams(r)
+ 
+    //不记录passwd
+    if _,ok := params["passwd"];ok {
+        params["passwd"] = "***"
+    }
+
     jsonRes,err := json.Marshal(params)
     par := string(jsonRes)
     if err!= nil{
