@@ -125,12 +125,13 @@ func WebContainer() {
 //定义http请求的处理方法
 func WebHandler(w http.ResponseWriter, r *http.Request)  {
     var err error
-    var isAct,res bool
+    var isAct,res,denyIp bool
     var timPar TimerParm
-    var pwd,ac,kid string
+    var pwd,ac,kid,ip string
     var num int
     var tsk *KtimerTask
     var kd *KtimerData
+    var allowIps []string
 
     LogWebes("accept request:", getRequestLog(r)) 
 
@@ -141,6 +142,18 @@ func WebHandler(w http.ResponseWriter, r *http.Request)  {
         goto ENDHERE
     }
 
+    //检查客户端IP是否被允许
+    allowIps = CnfObj.Strings("web::web.allow_ip")
+    for _,ip = range allowIps {
+        if strings.Index(r.RemoteAddr, ip)==0 {
+            denyIp = true
+            break
+        }
+    }
+    if !denyIp {
+        outputJson(w, false, 401, "unauthorized access", "")
+        goto ENDHERE
+    }
     //检查密码是否正确
     timPar,err = getTimerParams(r)
     pwd = CnfObj.String("web::web.passwd")

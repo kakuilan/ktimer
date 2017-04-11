@@ -40,6 +40,8 @@ web.enable = 1
 web.port = 9558
 #web监听IP
 web.bind_ip = 127.0.0.1
+#web允许的IP段
+web.allow_ip = 127.,192.,10.
 #web访问密码
 web.passwd = eCvN5BxH$bJc
 
