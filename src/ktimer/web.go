@@ -226,12 +226,13 @@ func WebHandler(w http.ResponseWriter, r *http.Request)  {
                 }
             case "add" :
                 if timPar.Command=="" {
-                    outputJson(w, false, 200, "parameter command missing or error", "")
+                    outputJson(w, false, 200, "parameter command is empty", "")
                     goto ENDHERE
                 }
 
+                kd = &KtimerData{}
                 kd.Type = timPar.Type
-                kd.Time,_ = strconv.Atoi(timPar.Time)
+                kd.Time,err = strconv.Atoi(timPar.Time)
                 kd.Limit,_ = strconv.Atoi(timPar.Limit)
                 kd.Command = timPar.Command
 
@@ -251,6 +252,7 @@ func WebHandler(w http.ResponseWriter, r *http.Request)  {
                         goto ENDHERE
                     }
 
+                    kd = &KtimerData{}
                     kd.Type = timPar.Type
                     kd.Time,_ = strconv.Atoi(timPar.Time)
                     kd.Limit,_ = strconv.Atoi(timPar.Limit)
