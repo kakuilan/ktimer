@@ -309,6 +309,20 @@ func AddTimer(td *KtimerData) (bool, string, *KtimerTask, error) {
 		return res, kid, kt, err
 	}
 
+    //检查任务数量限制
+    cnfObj, _ := GetConfObj()
+    tskMaxNum,err := cnfObj.Int("task_max_num")
+    if err!=nil || tskMaxNum<=0 {
+        tskMaxNum = 500000
+    }
+    curTskNum,err := CountTimer()
+    if err!=nil {
+        return res,kid,kt,err
+    }else if(curTskNum>=tskMaxNum) {
+        err = errors.New("max number allowed task "+ strconv.Itoa(tskMaxNum))
+        return res,kid,kt,err
+    }
+
 	res, err = _addTask2Pool(kid, jsonRes)
 	if err == nil {
 		res, err = _addTask2Queu(kid, kt.Run_nexttime, secNum)
