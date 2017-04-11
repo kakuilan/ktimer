@@ -131,7 +131,7 @@ func WebHandler(w http.ResponseWriter, r *http.Request)  {
     var num int
     var tsk *KtimerTask
     var kd *KtimerData
-    var allowIps []string
+    var allowIps,kids []string
 
     LogWebes("accept request:", getRequestLog(r)) 
 
@@ -154,6 +154,7 @@ func WebHandler(w http.ResponseWriter, r *http.Request)  {
         outputJson(w, false, 401, "unauthorized access", "")
         goto ENDHERE
     }
+
     //检查密码是否正确
     timPar,err = getTimerParams(r)
     pwd = CnfObj.String("web::web.passwd")
@@ -195,8 +196,25 @@ func WebHandler(w http.ResponseWriter, r *http.Request)  {
                     }
                 }
             case "del" :
-                if timPar.Kid=="" || !IsNumeric(timPar.Kid)  {
+                if timPar.Kid =="" {
+                    outputJson(w, false, 200, "paramter kid missing", "")
+                    goto ENDHERE
+                }else if strings.Index(timPar.Kid, ",")>0 { //删除多个kid
+                    kids = strings.Split(timPar.Kid, ",")
+                    for _,kid = range kids {
+                        res,err = DelTimer(kid)
+                        if !res || err!=nil {
+                            outputJson(w, false, 200, "fail", err.Error())
+                            goto ENDHERE
+                            break
+                        }else{
+                            num++
+                        }
+                    }
+                    outputJson(w, true, 200, "success", num)
+                }else if !IsNumeric(timPar.Kid)  {
                     outputJson(w, false, 200, "parameter kid missing or error", "")
+                    goto ENDHERE
                 }else{
                     res,err = DelTimer(timPar.Kid)
                     if !res || err!=nil {
@@ -356,7 +374,7 @@ func getTimerParams(r *http.Request) (TimerParm,error) {
     }
     if len(r.Form["kid"])>0 {
         tp.Kid = strings.TrimSpace(r.Form["kid"][0])
-        if tp.Kid!="" && !IsNumeric(tp.Kid) {
+        if tp.Kid!="" && strings.Index(tp.Kid, ",")==-1 && !IsNumeric(tp.Kid) {
             err = errors.New("kid must be numeric")
         }
     }
