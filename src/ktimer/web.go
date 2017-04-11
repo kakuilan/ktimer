@@ -133,7 +133,7 @@ func WebHandler(w http.ResponseWriter, r *http.Request)  {
     var kd *KtimerData
     var allowIps,kids []string
 
-    LogWebes("accept request:", getRequestLog(r)) 
+    LogWebes("accept request:", getRequestLog(r))
 
     CnfObj, err = GetConfObj()
     if err!=nil {
@@ -158,7 +158,7 @@ func WebHandler(w http.ResponseWriter, r *http.Request)  {
     //检查密码是否正确
     timPar,err = getTimerParams(r)
     pwd = CnfObj.String("web::web.passwd")
-    if(pwd!="" && timPar.Passwd != pwd && false) {
+    if(pwd!="" && timPar.Passwd != pwd ) {
         outputJson(w, false, 401, "You are not authorized to access", "")
         goto ENDHERE
     }else if err!=nil {
@@ -228,7 +228,7 @@ func WebHandler(w http.ResponseWriter, r *http.Request)  {
                     outputJson(w, false, 200, "parameter command missing or error", "")
                     goto ENDHERE
                 }
-                //kd = &KtimerData{}
+
                 kd.Type = timPar.Type
                 kd.Time,_ = strconv.Atoi(timPar.Time)
                 kd.Limit,_ = strconv.Atoi(timPar.Limit)
@@ -250,7 +250,7 @@ func WebHandler(w http.ResponseWriter, r *http.Request)  {
                         goto ENDHERE
                     }
 
-                    kd.Type = timPar.Type 
+                    kd.Type = timPar.Type
                     kd.Time,_ = strconv.Atoi(timPar.Time)
                     kd.Limit,_ = strconv.Atoi(timPar.Limit)
                     kd.Command = timPar.Command
