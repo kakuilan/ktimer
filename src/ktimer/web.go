@@ -127,7 +127,7 @@ func WebHandler(w http.ResponseWriter, r *http.Request)  {
     var err error
     var isAct,res bool
     var timPar TimerParm
-    var pwd,ac string
+    var pwd,ac,kid string
     var num int
     var tsk *KtimerTask
     var kd *KtimerData
@@ -185,7 +185,7 @@ func WebHandler(w http.ResponseWriter, r *http.Request)  {
                 if timPar.Kid=="" || !IsNumeric(timPar.Kid)  {
                     outputJson(w, false, 200, "parameter kid missing or error", "")
                 }else{
-                    res,err := DelTimer(timPar.Kid)
+                    res,err = DelTimer(timPar.Kid)
                     if !res || err!=nil {
                         outputJson(w, false, 200, "fail", err.Error())
                     }else{
@@ -197,19 +197,42 @@ func WebHandler(w http.ResponseWriter, r *http.Request)  {
                     outputJson(w, false, 200, "parameter command missing or error", "")
                     goto ENDHERE
                 }
-                kd = &KtimerData{}
-                kd.Type = timPar.Type 
+                //kd = &KtimerData{}
+                kd.Type = timPar.Type
                 kd.Time,_ = strconv.Atoi(timPar.Time)
                 kd.Limit,_ = strconv.Atoi(timPar.Limit)
                 kd.Command = timPar.Command
 
-                res,kid,_,err := AddTimer(kd)
+                res,kid,_,err = AddTimer(kd)
                 if !res || err!=nil {
                     outputJson(w, false, 200, "fail", err.Error())
                 }else{
                     outputJson(w, true, 200, "success", kid)
                 }
+            case "update" :
+                if timPar.Kid=="" || !IsNumeric(timPar.Kid) {
+                    outputJson(w, false, 200, "parameter kid missing or error", "")
+                }else{
+                    tsk,err = GetTimer(timPar.Kid)
+                    if err!=nil {
+                        outputJson(w, false, 200, "fail", err.Error())
+                        goto ENDHERE
+                    }
 
+                    kd.Type = timPar.Type 
+                    kd.Time,_ = strconv.Atoi(timPar.Time)
+                    kd.Limit,_ = strconv.Atoi(timPar.Limit)
+                    kd.Command = timPar.Command
+
+                    res,kid,_,err = UpdateTimer(timPar.Kid, kd)
+                    if !res || err!=nil {
+                        outputJson(w, false, 200, "fail", err.Error())
+                    }else{
+                        outputJson(w, true, 200, "success", kid)
+                    }
+                }
+            case "list" :
+                outputJson(w, false, 200, "fail", "todo")
             }
         }
     }
