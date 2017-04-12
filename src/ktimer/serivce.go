@@ -169,13 +169,13 @@ func CheckPidFile() (string, error) {
 
 //服务错误处理
 func ServiceError(msg string, err error) {
-	stacks := _getRunStack(false)
+	stacks := _getRunStack(true)
 	LogErres(msg, err, string(stacks))
 	if err != nil {
-		fmt.Println(msg, err, string(stacks))
+		fmt.Println(msg, err)
 		os.Exit(1)
 	} else {
-		fmt.Println(msg, string(stacks))
+		fmt.Println(msg)
 		os.Exit(0)
 	}
 }
@@ -183,7 +183,7 @@ func ServiceError(msg string, err error) {
 //服务异常处理
 func ServiceException() {
 	if err := recover(); err != nil {
-		stacks := _getRunStack(false)
+		stacks := _getRunStack(true)
 		LogErres("panic err:", err, string(stacks))
 		fmt.Println(err, string(stacks))
 		//os.Exit(1)
