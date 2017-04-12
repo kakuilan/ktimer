@@ -10,7 +10,8 @@ import (
 	"io/ioutil"
 	"os"
 	"runtime"
-	"strings"
+    "runtime/pprof"
+    "strings"
 )
 
 //定义KT服务类型
@@ -409,7 +410,13 @@ func ServiceMain() {
 	msg = fmt.Sprintf("main service run success[%d].", ServPidno)
 	LogService(msg)
 	fmt.Println(msg)
-	TimerContainer()
+
+    //监控性能
+    f, _ := os.Create("profile_file")
+    pprof.StartCPUProfile(f)
+    defer pprof.StopCPUProfile()
+
+    TimerContainer()
 	WebContainer()
 }
 
