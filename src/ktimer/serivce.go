@@ -10,7 +10,7 @@ import (
 	"os"
     "io/ioutil"
     "strings"
-//    "encoding/json"
+    "runtime"
 )
 
 //定义KT服务类型
@@ -169,12 +169,13 @@ func CheckPidFile() (string, error) {
 
 //服务错误处理
 func ServiceError(msg string, err error) {
-    LogErres(msg,err)
+    stacks := _getRunStack(false)
+    LogErres(msg, err, string(stacks))
     if err != nil {
-		fmt.Println(msg, err)
+		fmt.Println(msg, err, string(stacks))
 		os.Exit(1)
 	} else {
-		fmt.Println(msg)
+		fmt.Println(msg, string(stacks))
 		os.Exit(0)
 	}
 }
@@ -182,10 +183,26 @@ func ServiceError(msg string, err error) {
 //服务异常处理
 func ServiceException() {
 	if err := recover(); err != nil {
-		fmt.Println(err)
-        LogErres("panic err:", err)
-		os.Exit(1)
+        stacks := _getRunStack(false)
+        LogErres("panic err:", err, string(stacks))
+		fmt.Println(err, string(stacks))
+		//os.Exit(1)
 	}
+}
+
+//获取运行栈
+func _getRunStack(all bool) []byte {
+        buf := make([]byte, 512)
+        for {
+            size := runtime.Stack(buf, all)
+            if size==len(buf) {
+                buf = make([]byte, len(buf)<<1)
+                continue
+            }
+            break
+        }
+
+    return buf
 }
 
 //初始化检查
@@ -227,6 +244,9 @@ func ServiceInit() {
 	if err != nil {
 		ServiceError("check pid has error:" +pidf, err)
 	}
+
+    //设置异常处理
+    defer ServiceException()
 
 }
 

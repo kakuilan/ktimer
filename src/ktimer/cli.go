@@ -124,7 +124,7 @@ func CatchCli() {
 		}
 
 		//设置异常处理
-		defer ServiceException()
+		//defer ServiceException()
 
 		switch action {
 		case "version":

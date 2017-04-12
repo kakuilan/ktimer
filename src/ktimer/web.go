@@ -136,6 +136,9 @@ func WebHandler(w http.ResponseWriter, r *http.Request)  {
 
     LogWebes("accept request:", getRequestLog(r))
 
+    //设置异常处理
+    defer ServiceException()
+
     CnfObj, err = GetConfObj()
     if err!=nil {
         LogWebes("web server accept request has err:", err)
