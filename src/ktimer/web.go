@@ -413,8 +413,8 @@ func getRequestLog(r *http.Request) ReqLog {
     //不记录passwd
     reg := regexp.MustCompile(`(?i:passw(or)?d[ ]{0,}=[A-Za-z0-9]+)`)
     url = reg.ReplaceAllString(url,"passwd=***")
+    reg = regexp.MustCompile(`(?i:passw(or)?d)`)
     for k,_ := range params {
-        reg = regexp.MustCompile(`(?i:passw(or)?d)`)
         if reg.Match([]byte(k)) {
             params[k] = "***"
         }
