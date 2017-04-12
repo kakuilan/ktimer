@@ -358,6 +358,9 @@ func ServiceStop() {
 
 	}
 
+    //停止性能监控
+    pprof.StopCPUProfile()
+
 	fmt.Println(status)
 	LogService("service stop success.")
 }
