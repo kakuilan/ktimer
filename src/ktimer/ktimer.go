@@ -44,6 +44,13 @@ type KtimerTask struct {
 	Run_nexttime float64 `json:"run_nexttime"`
 }
 
+//处理结果结构
+type TkProceResp struct {
+	Kid string
+	Res bool
+	Err error
+}
+
 //禁止的命令
 var DenyCmd = []string{
 	"rm ",
@@ -70,7 +77,7 @@ func TimerContainer() {
 			msg := fmt.Sprintf("MainTimer begining c[%v], now[%0.6f]", c, now_mic)
 			LogRunes(msg)
 			fmt.Println(msg)
-			func(now_mic float64) {
+			go func(now_mic float64) {
 				_, runErr := MainTimer(now_mic)
 				if runErr != nil {
 					LogErres("MainTimer run error,", runErr)
@@ -99,22 +106,24 @@ func MainTimer(now_mic float64) (int, error) {
 		return sucNum, err
 	}
 
-	i := 0
+	//channel
+	ch := make(chan *TkProceResp, 100)
+	chNum := 0
+
 	for {
 		if breakQue {
 			break
 		}
-		i++
 		zres, err := client.ZRangeWithScores(key, 0, 0).Result()
 		zlen := len(zres)
 		if err != nil || zlen == 0 {
 			break
 		} else {
-			allNum++
 			if redZ == zres[0] {
 				break
 			}
 
+            allNum++
 			redZ = zres[0]
 			zms := GetMainSecond(redZ.Score)
 			if ms != zms && GreaterOrEqual(redZ.Score, now_mic) { //未到执行时间
@@ -123,39 +132,66 @@ func MainTimer(now_mic float64) (int, error) {
 				LogRunes(msg)
 				fmt.Println(msg)
 			} else { //执行任务
-				runRes, runErr := RunSecondTask(redZ, now_mic)
-				if runRes && runErr == nil {
-					sucNum++
-				} else {
-					_delTask4Queu(fmt.Sprintf("%s", redZ), redZ.Score)
-				}
+				chNum++
+				go func(zd redis.Z, now_mic float64, ch chan *TkProceResp) {
+					runRes, runErr := RunSecondTask(redZ, now_mic, ch)
+					if !runRes || runErr != nil {
+						_delTask4Queu(fmt.Sprintf("%s", redZ), redZ.Score)
+					}
+				}(redZ, now_mic, ch)
 			}
 
-			fmt.Printf("zstruct type:[%T] %v i[%d]\n", redZ, redZ, i)
+			fmt.Printf("zstruct type:[%T] %v i[%d]\n", redZ, redZ, allNum)
 		}
 	}
 
-	msg := fmt.Sprintf("MainTimer:%0.6f, tasks total:[%d] runed:[%d]", now_mic, allNum, sucNum)
-	LogRunes(msg)
+	//等待结果返回
+	retNum := 0
+	for {
+		if retNum >= chNum {
+			break
+		}
+
+		select {
+		case tpr := <-ch:
+			retNum++
+			if tpr.Res && tpr.Err == nil {
+				sucNum++
+			}
+		default:
+			time.Sleep(100 * time.Microsecond)
+		}
+	}
+
+	msg := fmt.Sprintf("MainTimer result:%0.6f, tasks total:[%d] runed:[%d]", now_mic, allNum, sucNum)
+	if allNum >0 {
+        LogRunes(msg)
+    }
 	fmt.Println(msg)
 
 	return sucNum, err
 }
 
 //执行定时器秒任务
-func RunSecondTask(zd redis.Z, now_mic float64) (bool, error) {
+func RunSecondTask(zd redis.Z, now_mic float64, ch chan *TkProceResp) (bool, error) {
 	var res bool
 	var err error
+	var tpr = &TkProceResp{}
 
 	kid := fmt.Sprintf("%v", zd.Member)
+	tpr.Kid = kid
+
 	kd, err := GetTaskDetail(kid)
 	if err != nil {
 		delRes, delErr := DelTaskDetail(kid)
-        if delErr!=nil {
-            _,_ = _delTask4Queu(kid, zd.Score)
-        }
+		if delErr != nil {
+			_, _ = _delTask4Queu(kid, zd.Score)
+		}
 		LogRunes("SecondTask is not exist,deleted.kid:", kid)
 		fmt.Println("kid not exist", delRes, delErr)
+
+		tpr.Err = err
+		ch <- tpr
 		return res, err
 	}
 
@@ -164,6 +200,9 @@ func RunSecondTask(zd redis.Z, now_mic float64) (bool, error) {
 	if !locked {
 		LogRunes("SecondTask get doing lock faili.kid:", kid)
 		err = errors.New("get doing lock fail")
+
+		tpr.Err = err
+		ch <- tpr
 		return res, err
 	}
 
@@ -173,6 +212,8 @@ func RunSecondTask(zd redis.Z, now_mic float64) (bool, error) {
 		_, _ = DelTaskDetail(kid)
 		msg := fmt.Sprintf("SecondTask kid[%s] had runed [%d] times,deleted.", zd.Member, kd.Run_num)
 		LogRunes(msg, kd)
+
+		ch <- tpr
 		return res, err
 	}
 
@@ -209,6 +250,8 @@ func RunSecondTask(zd redis.Z, now_mic float64) (bool, error) {
 	RunDetailTask(kid, kd.Command)
 
 	res, err = true, nil
+	tpr.Res = true
+	ch <- tpr
 	return res, err
 }
 
@@ -261,9 +304,9 @@ func AddTimer(td *KtimerData) (bool, string, *KtimerTask, error) {
 		return res, kid, kt, err
 	}
 
-    if td.Type=="" {
-        td.Type = "timer"
-    }else if td.Type != "timer" && td.Type != "ticker" {
+	if td.Type == "" {
+		td.Type = "timer"
+	} else if td.Type != "timer" && td.Type != "ticker" {
 		err = errors.New("type is error")
 		return res, kid, kt, err
 	}
@@ -309,19 +352,19 @@ func AddTimer(td *KtimerData) (bool, string, *KtimerTask, error) {
 		return res, kid, kt, err
 	}
 
-    //检查任务数量限制
-    cnfObj, _ := GetConfObj()
-    tskMaxNum,err := cnfObj.Int("task_max_num")
-    if err!=nil || tskMaxNum<=0 {
-        tskMaxNum = 500000
-    }
-    curTskNum,err := CountTimer()
-    if err!=nil {
-        return res,kid,kt,err
-    }else if(curTskNum>=tskMaxNum) {
-        err = errors.New("max number allowed task "+ strconv.Itoa(tskMaxNum))
-        return res,kid,kt,err
-    }
+	//检查任务数量限制
+	cnfObj, _ := GetConfObj()
+	tskMaxNum, err := cnfObj.Int("task_max_num")
+	if err != nil || tskMaxNum <= 0 {
+		tskMaxNum = 500000
+	}
+	curTskNum, err := CountTimer()
+	if err != nil {
+		return res, kid, kt, err
+	} else if curTskNum >= tskMaxNum {
+		err = errors.New("max number allowed task " + strconv.Itoa(tskMaxNum))
+		return res, kid, kt, err
+	}
 
 	res, err = _addTask2Pool(kid, jsonRes)
 	if err == nil {
@@ -874,9 +917,9 @@ func RunUrlTask(tsk string, needreturn bool) (string, error) {
 		})
 	}
 
-	if err = easy.Perform(); err==nil {
-        res = Substr(res, 0, 1024)
-    }
+	if err = easy.Perform(); err == nil {
+		res = Substr(res, 0, 1024)
+	}
 
 	return res, err
 }
@@ -889,8 +932,8 @@ func RunCmdTask(tsk string, needreturn bool) (string, error) {
 
 	if needreturn { //需要返回
 		out, err = exec.Command("/bin/bash", "-c", tsk).CombinedOutput()
-	    res = Substr(string(out), 0, 1024)
-    } else {
+		res = Substr(string(out), 0, 1024)
+	} else {
 		err = exec.Command("/bin/bash", "-c", tsk).Start()
 	}
 
@@ -926,7 +969,7 @@ func ParseTaskUrl(str string) (string, string, int, error) {
 		if k == "kt_post" { //post数据
 			q.Del(k)
 			if v[0] != "" {
-                str := strings.Trim(v[0], "\"' ")
+				str := strings.Trim(v[0], "\"' ")
 				err = json.Unmarshal([]byte(str), pd)
 				num := len(*pd)
 				if err == nil && num > 0 {
@@ -936,9 +979,9 @@ func ParseTaskUrl(str string) (string, string, int, error) {
 						tmpQ.Add(pk, fmt.Sprintf("%v", pv))
 					}
 					nPos = tmpQ.Encode()
-				}else{
-                    //LogRunes("json error.", "ori:", u.RawQuery, m, "str:", str, "err:", err)
-                }
+				} else {
+					//LogRunes("json error.", "ori:", u.RawQuery, m, "str:", str, "err:", err)
+				}
 			}
 		}
 	}
