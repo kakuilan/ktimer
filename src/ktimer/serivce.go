@@ -411,8 +411,11 @@ func ServiceMain() {
 	LogService(msg)
 	fmt.Println(msg)
 
+    rundir,_ := CheckRuntimedir()
+    profile := rundir + "/profile_file"
+
     //监控性能
-    f, _ := os.Create("profile_file")
+    f, _ := os.Create(profile)
     pprof.StartCPUProfile(f)
     defer pprof.StopCPUProfile()
 
