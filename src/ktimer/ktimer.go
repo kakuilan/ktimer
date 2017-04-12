@@ -123,7 +123,7 @@ func MainTimer(now_mic float64) (int, error) {
 				break
 			}
 
-            allNum++
+			allNum++
 			redZ = zres[0]
 			zms := GetMainSecond(redZ.Score)
 			if ms != zms && GreaterOrEqual(redZ.Score, now_mic) { //未到执行时间
@@ -164,9 +164,9 @@ func MainTimer(now_mic float64) (int, error) {
 	}
 
 	msg := fmt.Sprintf("MainTimer result:%0.6f, tasks total:[%d] runed:[%d]", now_mic, allNum, sucNum)
-	if allNum >0 {
-        LogRunes(msg)
-    }
+	if allNum > 0 {
+		LogRunes(msg)
+	}
 	fmt.Println(msg)
 
 	return sucNum, err

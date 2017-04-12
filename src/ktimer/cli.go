@@ -1,23 +1,23 @@
 package ktimer
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
-    "regexp"
-    "strconv"
-    "errors"
 )
 
 //命令行参数结构体
 type CliPara struct {
-    Type string `json:"type"`
-    Time int `json:"time"`
-    Limit int `json:"limit"`
-    Command string `json:"command"`
-    Kid string `json:"kid"`
-    Starttime int `json:"starttime"`
-    Endtime int `json:"endtime"`
+	Type      string `json:"type"`
+	Time      int    `json:"time"`
+	Limit     int    `json:"limit"`
+	Command   string `json:"command"`
+	Kid       string `json:"kid"`
+	Starttime int    `json:"starttime"`
+	Endtime   int    `json:"endtime"`
 }
 
 //命令集
@@ -37,8 +37,8 @@ var Commands = []string{
 	"del",
 	"add",
 	"update",
-    "list",
-    "test",
+	"list",
+	"test",
 }
 
 //打印帮助信息
@@ -79,14 +79,14 @@ func Help() {
 	fmt.Printf("%8s%-10s%-s\n", " ", "", "example:")
 	fmt.Printf("%8s%-10s%-s\n", " ", "", "ktimer add -type=timer -time=1 -limit=1 -command=\"echo -e Hello Ktimer\"")
 	fmt.Printf("%8s%-10s%-s\n", " ", "", "ktimer add -type=ticker -time=1 -limit=0 -command=\"date --rfc-3339=ns\"")
-	fmt.Printf("%8s%-10s%-s\n"," ", "update", "update the timer by a kid.The kid when inserted timer return")
-    fmt.Printf("%8s%-10s%-s\n"," ", "", "example:")
-	fmt.Printf("%8s%-10s%-s\n"," ", "", "ktimer update -key=8610014451 -time=5 -limit=6")
-    fmt.Printf("%8s%-10s%-s\n"," ", "list", "show a list of tasks for a period of time.it has two parameters:")
-    fmt.Printf("%8s%-10s%-s\n", " ", "", "-starttime: specify a start timestamp")
-    fmt.Printf("%8s%-10s%-s\n", " ", "", "-endtime: specify a end timestamp")
-    fmt.Printf("%8s%-10s%-s\n", " ", "", "example:")
-    fmt.Printf("%8s%-10s%-s\n"," ", "", "ktimer list -starttime=1480848121 -endtime=1490848121")
+	fmt.Printf("%8s%-10s%-s\n", " ", "update", "update the timer by a kid.The kid when inserted timer return")
+	fmt.Printf("%8s%-10s%-s\n", " ", "", "example:")
+	fmt.Printf("%8s%-10s%-s\n", " ", "", "ktimer update -key=8610014451 -time=5 -limit=6")
+	fmt.Printf("%8s%-10s%-s\n", " ", "list", "show a list of tasks for a period of time.it has two parameters:")
+	fmt.Printf("%8s%-10s%-s\n", " ", "", "-starttime: specify a start timestamp")
+	fmt.Printf("%8s%-10s%-s\n", " ", "", "-endtime: specify a end timestamp")
+	fmt.Printf("%8s%-10s%-s\n", " ", "", "example:")
+	fmt.Printf("%8s%-10s%-s\n", " ", "", "ktimer list -starttime=1480848121 -endtime=1490848121")
 	os.Exit(0)
 }
 
@@ -144,123 +144,123 @@ func CatchCli() {
 		case "restart":
 			ServiceRestart()
 		case "count":
-            ServiceInit()
-            num,err := CountTimer()
-            if err!=nil {
-                fmt.Println(err)
-            }else{
-                fmt.Printf("there are [%d] tasks.\n", num)
-            }
-            os.Exit(0)
+			ServiceInit()
+			num, err := CountTimer()
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Printf("there are [%d] tasks.\n", num)
+			}
+			os.Exit(0)
 		case "clear":
-            ServiceInit()
-		    res,err := ClearTimer()
-            if err!=nil {
-                fmt.Println(err)
-            }else{
-                fmt.Printf("operating result:[%t]\n", res)
-            }
-            os.Exit(0)
+			ServiceInit()
+			res, err := ClearTimer()
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Printf("operating result:[%t]\n", res)
+			}
+			os.Exit(0)
 		case "get":
-            ServiceInit()
-            if argNum<=2 {
-                fmt.Println("missing parameter kid")
-                os.Exit(0)
-            }
-            clipar,err := ParseCliArgs()
-            if err!=nil {
-                fmt.Println(err)
-                os.Exit(0)
-            }
-            kid := clipar.Kid
-            if kid=="" {
-                kid = os.Args[2]
-            }
+			ServiceInit()
+			if argNum <= 2 {
+				fmt.Println("missing parameter kid")
+				os.Exit(0)
+			}
+			clipar, err := ParseCliArgs()
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(0)
+			}
+			kid := clipar.Kid
+			if kid == "" {
+				kid = os.Args[2]
+			}
 
-            res,err := GetTimer(kid)
-            if err!=nil {
-                fmt.Println(err)
-            }else{
-                fmt.Printf("task detail info:\n%+v\n", res)
-            }
-            os.Exit(0)
-        case "del" :
-            ServiceInit()
-            if argNum<=2 {
-                fmt.Println("missing parameter kid")
-                os.Exit(0)
-            }
+			res, err := GetTimer(kid)
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Printf("task detail info:\n%+v\n", res)
+			}
+			os.Exit(0)
+		case "del":
+			ServiceInit()
+			if argNum <= 2 {
+				fmt.Println("missing parameter kid")
+				os.Exit(0)
+			}
 
-            clipar,err := ParseCliArgs()
-            if err!=nil {
-                fmt.Println(err)
-                os.Exit(0)
-            }
+			clipar, err := ParseCliArgs()
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(0)
+			}
 
-            kid := clipar.Kid 
-            if kid=="" {
-                kid = os.Args[2]
-            }
-            res,err := DelTimer(kid)
-            if err !=nil {
-                fmt.Println(err)
-            }else{
-                fmt.Printf("operating result:[%t]\n", res)
-            }
-            os.Exit(0)
-        case "add":
-            ServiceInit()
-            clipar,err := ParseCliArgs()
-            if err!=nil {
-                fmt.Println(err)
-                os.Exit(0)
-            }
-            kd := &KtimerData{
-                clipar.Type,
-                clipar.Time,
-                clipar.Limit,
-                clipar.Command,
-            }
-            res,kid,_,err := AddTimer(kd)
-            if err!=nil {
-                fmt.Println(err)
-            }else{
-                fmt.Printf("operating result:[%t] newkid:[%s]\n", res, kid)
-            }
-            os.Exit(0)
+			kid := clipar.Kid
+			if kid == "" {
+				kid = os.Args[2]
+			}
+			res, err := DelTimer(kid)
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Printf("operating result:[%t]\n", res)
+			}
+			os.Exit(0)
+		case "add":
+			ServiceInit()
+			clipar, err := ParseCliArgs()
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(0)
+			}
+			kd := &KtimerData{
+				clipar.Type,
+				clipar.Time,
+				clipar.Limit,
+				clipar.Command,
+			}
+			res, kid, _, err := AddTimer(kd)
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Printf("operating result:[%t] newkid:[%s]\n", res, kid)
+			}
+			os.Exit(0)
 		case "update":
-            ServiceInit()
-            clipar,err := ParseCliArgs()
-            if err!=nil {
-                fmt.Println(err)
-                os.Exit(0)
-            }
+			ServiceInit()
+			clipar, err := ParseCliArgs()
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(0)
+			}
 
-            if clipar.Kid=="" {
-                fmt.Println("missing parameter kid")
-                os.Exit(0)
-            }
+			if clipar.Kid == "" {
+				fmt.Println("missing parameter kid")
+				os.Exit(0)
+			}
 
-            kd := &KtimerData{
-                clipar.Type,
-                clipar.Time,
-                clipar.Limit,
-                clipar.Command,
-            }
+			kd := &KtimerData{
+				clipar.Type,
+				clipar.Time,
+				clipar.Limit,
+				clipar.Command,
+			}
 
-            res,newkid,_,err := UpdateTimer(clipar.Kid,kd)
-			if err!=nil {
-                fmt.Println(err)
-            }else{
-                fmt.Printf("operatin result:[%t] newkid:%s\n", res,newkid)
-            }
-            os.Exit(0)
-        case "list":
-            ServiceInit()
-            ServiceList()
-            fmt.Println("todo")
-            //TODO
-        case "test" :
+			res, newkid, _, err := UpdateTimer(clipar.Kid, kd)
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Printf("operatin result:[%t] newkid:%s\n", res, newkid)
+			}
+			os.Exit(0)
+		case "list":
+			ServiceInit()
+			ServiceList()
+			fmt.Println("todo")
+			//TODO
+		case "test":
 			fmt.Println("test")
 		}
 
@@ -269,51 +269,50 @@ func CatchCli() {
 }
 
 //解析CLI下的相关参数
-func ParseCliArgs() (CliPara,error) {
-    var err error
-    cp := CliPara{}
-    reg := regexp.MustCompile(`[-]{0,2}([a-z]+)=['"]?(.*)['"]?`)
-    for i,arg := range os.Args {
-        if i>1 && (strings.HasPrefix(arg, "-") || strings.HasPrefix(arg, "--") || strings.Index(arg,"=")>0 ) {
-            mat := reg.FindAllStringSubmatch(arg, -1)
-            if len(mat)==0 {
-                continue
-            }
-            k,v := mat[0][1],mat[0][2]
-            switch (k) {
-            case "type":
-                cp.Type = v
-            case "time" :
-                cp.Time,err = strconv.Atoi(v)
-                if err !=nil {
-                    err = errors.New("time must be integer")
-                }
-            case "limit" :
-                cp.Limit,err = strconv.Atoi(v)
-                if err!=nil {
-                    err = errors.New("limit must be integer")
-                }
-            case "command" :
-                cp.Command = strings.TrimSpace(v)
-            case "kid" :
-                cp.Kid = v
-                if !IsNumeric(cp.Kid) {
-                    err = errors.New("kid must be integer")
-                }
-            case "starttime" :
-                cp.Starttime,err = strconv.Atoi(v)
-                if err!=nil {
-                    err = errors.New("starttime must be integer")
-                }
-            case "endtime" :
-                cp.Endtime,err = strconv.Atoi(v)
-                if err!=nil {
-                    err = errors.New("endtime must be integer")
-                }
-            }
-        }
-    }
-    
-    return cp,err
-}
+func ParseCliArgs() (CliPara, error) {
+	var err error
+	cp := CliPara{}
+	reg := regexp.MustCompile(`[-]{0,2}([a-z]+)=['"]?(.*)['"]?`)
+	for i, arg := range os.Args {
+		if i > 1 && (strings.HasPrefix(arg, "-") || strings.HasPrefix(arg, "--") || strings.Index(arg, "=") > 0) {
+			mat := reg.FindAllStringSubmatch(arg, -1)
+			if len(mat) == 0 {
+				continue
+			}
+			k, v := mat[0][1], mat[0][2]
+			switch k {
+			case "type":
+				cp.Type = v
+			case "time":
+				cp.Time, err = strconv.Atoi(v)
+				if err != nil {
+					err = errors.New("time must be integer")
+				}
+			case "limit":
+				cp.Limit, err = strconv.Atoi(v)
+				if err != nil {
+					err = errors.New("limit must be integer")
+				}
+			case "command":
+				cp.Command = strings.TrimSpace(v)
+			case "kid":
+				cp.Kid = v
+				if !IsNumeric(cp.Kid) {
+					err = errors.New("kid must be integer")
+				}
+			case "starttime":
+				cp.Starttime, err = strconv.Atoi(v)
+				if err != nil {
+					err = errors.New("starttime must be integer")
+				}
+			case "endtime":
+				cp.Endtime, err = strconv.Atoi(v)
+				if err != nil {
+					err = errors.New("endtime must be integer")
+				}
+			}
+		}
+	}
 
+	return cp, err
+}

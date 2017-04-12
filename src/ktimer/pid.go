@@ -63,56 +63,54 @@ func PidCreate(pidfile string) (int, error) {
 }
 
 //获取服务的pid进程号
-func GetServicePidNo() (int,error) {
-   var pidno int
-   var err error
-   var pidfile string
+func GetServicePidNo() (int, error) {
+	var pidno int
+	var err error
+	var pidfile string
 
-    pidfile,err = CheckPidFile()
-    if err !=nil {
-        return 0,err
-    }
+	pidfile, err = CheckPidFile()
+	if err != nil {
+		return 0, err
+	}
 
-    pidno,err = PidGetVue(pidfile)
-    if err != nil {
-        return 0,err
-    }
+	pidno, err = PidGetVue(pidfile)
+	if err != nil {
+		return 0, err
+	}
 
-    _,err = PidIsActive(pidno)
-    if err !=nil {
-        return 0,err
-    }
+	_, err = PidIsActive(pidno)
+	if err != nil {
+		return 0, err
+	}
 
-    return pidno,err
+	return pidno, err
 }
 
 //比较当前进程和服务进程的pid
-func CheckCurrent2ServicePid()(bool,error) {
-    var chk bool
-    var err error
-    var serPid,curPid int
+func CheckCurrent2ServicePid() (bool, error) {
+	var chk bool
+	var err error
+	var serPid, curPid int
 
-    serPid,err = GetServicePidNo()
-    if err!=nil {
-        return false,err
-    }
+	serPid, err = GetServicePidNo()
+	if err != nil {
+		return false, err
+	}
 
-    curPid = os.Getpid()
-    if serPid==curPid {
-        chk = true
-    }
+	curPid = os.Getpid()
+	if serPid == curPid {
+		chk = true
+	}
 
-    return chk,err
+	return chk, err
 }
 
 //设置当前服务pid
 func SetCurrentServicePid(pid int) {
-    ServPidno = pid
+	ServPidno = pid
 }
 
 //获取当前服务pid
 func GetCurrentServicePid() int {
-    return ServPidno
+	return ServPidno
 }
-
-

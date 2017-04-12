@@ -5,10 +5,10 @@ import (
 	//"fmt"
 	"config"
 	"errors"
+	"math/rand"
 	"os"
-    "time"
-    "math/rand"
-    "regexp"
+	"regexp"
+	"time"
 )
 
 //默认配置
@@ -95,12 +95,12 @@ func CreateConfFile() (bool, error) {
 	fout, err := os.Create(confFile)
 	defer fout.Close()
 	if err == nil {
-        //生成新的web密码
-        pwdbyt := RandPwd(12,3)
-        pwdstr := "web.passwd = " + string(pwdbyt) +"\n"
-        re,_ := regexp.Compile(`web.passwd( )?=( )?.*\n`)
-        pwdstr = re.ReplaceAllString(DEFAULT_CONF, pwdstr)
-        fout.WriteString(pwdstr)
+		//生成新的web密码
+		pwdbyt := RandPwd(12, 3)
+		pwdstr := "web.passwd = " + string(pwdbyt) + "\n"
+		re, _ := regexp.Compile(`web.passwd( )?=( )?.*\n`)
+		pwdstr = re.ReplaceAllString(DEFAULT_CONF, pwdstr)
+		fout.WriteString(pwdstr)
 	}
 
 	return res, err
@@ -122,8 +122,8 @@ func GetConfObj() (config.ConfigInterface, error) {
 
 //生成随机密码
 func RandPwd(size int, kind int) []byte {
-    //kind:0纯数字,1小写字母,2大写字母,3数字和大小写
-    ikind, kinds, result := kind, [][]int{[]int{10, 48}, []int{26, 97}, []int{26, 65}}, make([]byte, size)
+	//kind:0纯数字,1小写字母,2大写字母,3数字和大小写
+	ikind, kinds, result := kind, [][]int{[]int{10, 48}, []int{26, 97}, []int{26, 65}}, make([]byte, size)
 	is_all := kind > 2 || kind < 0
 	rand.Seed(time.Now().UnixNano())
 	for i := 0; i < size; i++ {

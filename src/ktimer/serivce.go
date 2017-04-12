@@ -5,12 +5,12 @@ import (
 	//"github.com/astaxie/beego/config"
 	//"config"
 	"errors"
-	"github.com/takama/daemon"
 	"github.com/go-redis/redis"
+	"github.com/takama/daemon"
+	"io/ioutil"
 	"os"
-    "io/ioutil"
-    "strings"
-    "runtime"
+	"runtime"
+	"strings"
 )
 
 //定义KT服务类型
@@ -69,35 +69,35 @@ func CheckRedis() (bool, error) {
 		return res, err
 	}
 
-    defer client.Close()
+	defer client.Close()
 
 	return true, err
 }
 
 //检查运行时目录
-func CheckRuntimedir() (string,error) {
+func CheckRuntimedir() (string, error) {
 	var rundir string
 	var err error
 
 	currdir := GetCurrentDirectory()
-	rundir = currdir +"/runtime"
+	rundir = currdir + "/runtime"
 	direxis := FileExist(rundir)
 	if !direxis {
 		err = os.MkdirAll(rundir, 0766)
-		if err !=nil {
-			err = errors.New("failed to create runtime directiory:"+ rundir)
-			return rundir,err
+		if err != nil {
+			err = errors.New("failed to create runtime directiory:" + rundir)
+			return rundir, err
 		}
-	}else{
+	} else {
 		write := Writeable(rundir)
 		err = os.Chmod(rundir, 0766)
-		if !write || err!=nil {
-			err = errors.New("runtime dir cannot write:" +rundir)
-			return rundir,err
+		if !write || err != nil {
+			err = errors.New("runtime dir cannot write:" + rundir)
+			return rundir, err
 		}
 	}
 
-	return rundir,err
+	return rundir, err
 }
 
 //检查日志目录
@@ -152,7 +152,7 @@ func CheckPidFile() (string, error) {
 
 	pidfile = strings.Replace(pidfile, "\\", "/", -1)
 	pos := strings.Index(pidfile, "/")
-	if pos == -1 || pos!=0 {
+	if pos == -1 || pos != 0 {
 		currdir := GetCurrentDirectory()
 		pidfile = currdir + "/" + strings.TrimRight(pidfile, "/")
 	}
@@ -166,12 +166,11 @@ func CheckPidFile() (string, error) {
 	return pidfile, err
 }
 
-
 //服务错误处理
 func ServiceError(msg string, err error) {
-    stacks := _getRunStack(false)
-    LogErres(msg, err, string(stacks))
-    if err != nil {
+	stacks := _getRunStack(false)
+	LogErres(msg, err, string(stacks))
+	if err != nil {
 		fmt.Println(msg, err, string(stacks))
 		os.Exit(1)
 	} else {
@@ -183,8 +182,8 @@ func ServiceError(msg string, err error) {
 //服务异常处理
 func ServiceException() {
 	if err := recover(); err != nil {
-        stacks := _getRunStack(false)
-        LogErres("panic err:", err, string(stacks))
+		stacks := _getRunStack(false)
+		LogErres("panic err:", err, string(stacks))
 		fmt.Println(err, string(stacks))
 		//os.Exit(1)
 	}
@@ -192,17 +191,17 @@ func ServiceException() {
 
 //获取运行栈
 func _getRunStack(all bool) []byte {
-        buf := make([]byte, 512)
-        for {
-            size := runtime.Stack(buf, all)
-            if size==len(buf) {
-                buf = make([]byte, len(buf)<<1)
-                continue
-            }
-            break
-        }
+	buf := make([]byte, 512)
+	for {
+		size := runtime.Stack(buf, all)
+		if size == len(buf) {
+			buf = make([]byte, len(buf)<<1)
+			continue
+		}
+		break
+	}
 
-    return buf
+	return buf
 }
 
 //初始化检查
@@ -234,19 +233,19 @@ func ServiceInit() {
 	}
 
 	//检查运行时目录
-	_,err = CheckRuntimedir()
-	if err!=nil {
+	_, err = CheckRuntimedir()
+	if err != nil {
 		ServiceError("check runtime dir has error:", err)
 	}
 
 	//检查pid
 	pidf, err := CheckPidFile()
 	if err != nil {
-		ServiceError("check pid has error:" +pidf, err)
+		ServiceError("check pid has error:"+pidf, err)
 	}
 
-    //设置异常处理
-    defer ServiceException()
+	//设置异常处理
+	defer ServiceException()
 
 }
 
@@ -271,7 +270,7 @@ func ServiceInstall() {
 		ServiceError("service install fail.", err)
 	}
 	fmt.Println(status)
-    LogService("service install success.")
+	LogService("service install success.")
 }
 
 //卸载服务
@@ -308,15 +307,15 @@ func ServiceStart() {
 		ServiceError("service start fail.", err)
 	}
 
-    //保存当前运行的配置
-    rundir,_ := CheckRuntimedir()
-    if curCnf,err := os.OpenFile(rundir+"/runcnf", os.O_RDWR|os.O_CREATE, 0600); err!=nil {
-        LogService("save run conf fail.", err)
-    }else{
-        cnfobj,_ := GetConfObj()
-        str := fmt.Sprint(cnfobj)
-        curCnf.Write([]byte(str))
-    }
+	//保存当前运行的配置
+	rundir, _ := CheckRuntimedir()
+	if curCnf, err := os.OpenFile(rundir+"/runcnf", os.O_RDWR|os.O_CREATE, 0600); err != nil {
+		LogService("save run conf fail.", err)
+	} else {
+		cnfobj, _ := GetConfObj()
+		str := fmt.Sprint(cnfobj)
+		curCnf.Write([]byte(str))
+	}
 
 	fmt.Println(status)
 	LogService("service start success.")
@@ -331,12 +330,12 @@ func ServiceStop() {
 
 	//先检查是否在运行
 	status = "service is stopped."
-	serPidno,_ := GetServicePidNo()
+	serPidno, _ := GetServicePidNo()
 	chk, _ = PidIsActive(serPidno)
-	if serPidno==0 || chk {
+	if serPidno == 0 || chk {
 		service, _ := GetDaemon()
 		status, err = service.Stop()
-		if err != nil && serPidno>0 {
+		if err != nil && serPidno > 0 {
 			serProcess, err := os.FindProcess(serPidno)
 			if err != nil {
 				ServiceError("service stop fail.", err)
@@ -416,29 +415,29 @@ func ServiceMain() {
 
 //查看运行时服务的信息
 func ServiceInfo() {
-    var cnfStr string
-    taskNum,_ := CountTimer()
-   
-    ServiceInit()
-    serPidno, _ := GetServicePidNo()
-    chk, _ := PidIsActive(serPidno)
-    if !chk {
-        fmt.Println("service is not running.")
-        os.Exit(0)
-    }
-    
-    //当前运行的配置
-    runDir,_ := CheckRuntimedir()
-    runCnf := runDir + "/runcnf"
-    cnfBuf,err := ioutil.ReadFile(runCnf)
-    if err==nil {
-        cnfStr = string(cnfBuf)
-    }
+	var cnfStr string
+	taskNum, _ := CountTimer()
 
-    fmt.Println("service is running...")
-    fmt.Println("current tasks num:", taskNum)
-    fmt.Println("current running conf:")
-    fmt.Println(cnfStr)
+	ServiceInit()
+	serPidno, _ := GetServicePidNo()
+	chk, _ := PidIsActive(serPidno)
+	if !chk {
+		fmt.Println("service is not running.")
+		os.Exit(0)
+	}
+
+	//当前运行的配置
+	runDir, _ := CheckRuntimedir()
+	runCnf := runDir + "/runcnf"
+	cnfBuf, err := ioutil.ReadFile(runCnf)
+	if err == nil {
+		cnfStr = string(cnfBuf)
+	}
+
+	fmt.Println("service is running...")
+	fmt.Println("current tasks num:", taskNum)
+	fmt.Println("current running conf:")
+	fmt.Println(cnfStr)
 
 }
 
@@ -450,5 +449,5 @@ func ServiceVersion() {
 
 //查看任务列表
 func ServiceList() {
-    
+
 }
