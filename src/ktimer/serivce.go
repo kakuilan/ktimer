@@ -417,7 +417,7 @@ func ServiceMain() {
 
     //监控性能
     rundir,_ := CheckRuntimedir()
-    defer profile.Start(profile.MemProfile, profile.ProfilePath(rundir), profile.NoShutdownHook)
+    defer profile.Start(profile.MemProfile, profile.ProfilePath(rundir), profile.MemProfileRate(8))
 //    profile := rundir + "/profile_file"
 //    f,err := os.OpenFile(profile, os.O_RDWR|os.O_CREATE, 0644)
 //    if err!=nil {

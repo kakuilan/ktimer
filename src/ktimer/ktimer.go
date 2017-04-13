@@ -395,6 +395,7 @@ func ReaddTimerAfterRun(kid string, kt *KtimerTask) (bool, error) {
 	}
 
 	kt.Run_num++
+    kt.Run_lasttime = kt.Run_nexttime
 	if kt.Type != "ticker" || (kt.Limit > 0 && kt.Run_num >= kt.Limit) {
 		err = errors.New("task is not ticker or number limit")
 		return res, err
