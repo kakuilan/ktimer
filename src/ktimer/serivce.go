@@ -1,16 +1,16 @@
 package ktimer
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/takama/daemon"
 	"io/ioutil"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"runtime"
-    "net/http"
-    _ "net/http/pprof"
-    "strings"
+	"strings"
 )
 
 //定义KT服务类型
@@ -18,8 +18,29 @@ type KTService struct {
 	daemon.Daemon
 }
 
+//全局redis客户端
+var SerRedisCli *redis.Client
+
 //获取redis连接
 func GetRedisClient() (*redis.Client, error) {
+	var client *redis.Client
+	var err error
+
+    //当前进程是否服务进程
+	isMainProc, _ := CheckCurrent2ServicePid()
+	if isMainProc {
+        if SerRedisCli==nil {
+            SerRedisCli,err = _getRedisClient()
+        }
+        return SerRedisCli,err
+	}else{
+        client,err = _getRedisClient()
+    }
+
+	return client, err
+}
+
+func _getRedisClient() (*redis.Client, error) {
 	var client *redis.Client
 	var err error
 	CnfObj, err = GetConfObj()
@@ -357,8 +378,8 @@ func ServiceStop() {
 
 	}
 
-    //停止性能监控
-    //pprof.StopCPUProfile()
+	//停止性能监控
+	//pprof.StopCPUProfile()
 
 	fmt.Println(status)
 	LogService("service stop success.")
@@ -413,25 +434,24 @@ func ServiceMain() {
 	LogService(msg)
 	fmt.Println(msg)
 
-    //性能监控
-    OpenProfile()
+	//性能监控
+	OpenProfile()
 
-    TimerContainer()
+	TimerContainer()
 	WebContainer()
 }
 
 //打开性能调试
 func OpenProfile() {
-    cnfobj,_ := GetConfObj()
-    isOpen,_ := cnfobj.Int("profile_open")
-    if isOpen>=1 {
-        port := cnfobj.String("profile_port")
-        go func(){
-            http.ListenAndServe("0.0.0.0:"+port, nil)
-        }()
-    }
+	cnfobj, _ := GetConfObj()
+	isOpen, _ := cnfobj.Int("profile_open")
+	if isOpen >= 1 {
+		port := cnfobj.String("profile_port")
+		go func() {
+			http.ListenAndServe("0.0.0.0:"+port, nil)
+		}()
+	}
 }
-
 
 //查看运行时服务的信息
 func ServiceInfo() {
