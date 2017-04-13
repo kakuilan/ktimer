@@ -10,7 +10,8 @@ import (
 	"io/ioutil"
 	"os"
 	"runtime"
-    "runtime/pprof"
+//    "runtime/pprof"
+    "github.com/pkg/profile"
     "strings"
 )
 
@@ -359,7 +360,7 @@ func ServiceStop() {
 	}
 
     //停止性能监控
-    pprof.StopCPUProfile()
+    //pprof.StopCPUProfile()
 
 	fmt.Println(status)
 	LogService("service stop success.")
@@ -414,13 +415,17 @@ func ServiceMain() {
 	LogService(msg)
 	fmt.Println(msg)
 
-    rundir,_ := CheckRuntimedir()
-    profile := rundir + "/profile_file"
-
     //监控性能
-    f, _ := os.Create(profile)
-    pprof.StartCPUProfile(f)
-    defer pprof.StopCPUProfile()
+    rundir,_ := CheckRuntimedir()
+    defer profile.Start(profile.MemProfile, profile.ProfilePath(rundir), profile.NoShutdownHook)
+//    profile := rundir + "/profile_file"
+//    f,err := os.OpenFile(profile, os.O_RDWR|os.O_CREATE, 0644)
+//    if err!=nil {
+//        LogService("create profile_file fail.", err)
+//    }
+//    pprof.StartCPUProfile(f)
+//    defer f.Close()
+//    defer pprof.StopCPUProfile()
 
     TimerContainer()
 	WebContainer()
