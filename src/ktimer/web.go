@@ -224,7 +224,7 @@ func WebHandler(w http.ResponseWriter, r *http.Request) {
 					if !res || err != nil {
 						outputJson(w, false, 200, "fail", err.Error())
 					} else {
-						outputJson(w, true, 200, "success", "")
+						outputJson(w, true, 200, "success", "1")
 					}
 				}
 			case "add":
