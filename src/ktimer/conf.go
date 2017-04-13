@@ -1,8 +1,6 @@
 package ktimer
 
 import (
-	//"github.com/astaxie/beego/config"
-	//"fmt"
 	"config"
 	"errors"
 	"math/rand"
@@ -32,6 +30,10 @@ task_expire_limit = 60
 task_sametimer_interval = 10
 #相同断续器的间隔限制.默认0为不允许存在多个相同断续器.
 task_sameticker_interval = 0
+#是否打开性能调试
+profile_open = 1
+#性能调试端口
+profile_port = 6060
 
 [web]
 #是否启用web

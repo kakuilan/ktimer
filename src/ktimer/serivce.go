@@ -2,16 +2,14 @@ package ktimer
 
 import (
 	"fmt"
-	//"github.com/astaxie/beego/config"
-	//"config"
 	"errors"
 	"github.com/go-redis/redis"
 	"github.com/takama/daemon"
 	"io/ioutil"
 	"os"
 	"runtime"
-//    "runtime/pprof"
-    "github.com/pkg/profile"
+    "net/http"
+    _ "net/http/pprof"
     "strings"
 )
 
@@ -415,21 +413,25 @@ func ServiceMain() {
 	LogService(msg)
 	fmt.Println(msg)
 
-    //监控性能
-    rundir,_ := CheckRuntimedir()
-    defer profile.Start(profile.MemProfile, profile.ProfilePath(rundir), profile.MemProfileRate(8))
-//    profile := rundir + "/profile_file"
-//    f,err := os.OpenFile(profile, os.O_RDWR|os.O_CREATE, 0644)
-//    if err!=nil {
-//        LogService("create profile_file fail.", err)
-//    }
-//    pprof.StartCPUProfile(f)
-//    defer f.Close()
-//    defer pprof.StopCPUProfile()
+    //性能监控
+    OpenProfile()
 
     TimerContainer()
 	WebContainer()
 }
+
+//打开性能调试
+func OpenProfile() {
+    cnfobj,_ := GetConfObj()
+    isOpen,_ := cnfobj.Int("profile_open")
+    if isOpen>=1 {
+        port := cnfobj.String("profile_port")
+        go func(){
+            http.ListenAndServe("0.0.0.0:"+port, nil)
+        }()
+    }
+}
+
 
 //查看运行时服务的信息
 func ServiceInfo() {
