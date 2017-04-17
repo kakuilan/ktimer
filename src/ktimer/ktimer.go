@@ -149,6 +149,7 @@ func MainTimer(now_mic float64) (int, error) {
 	retNum := 0
 	for {
 		if retNum >= chNum {
+            close(ch)
 			break
 		}
 
