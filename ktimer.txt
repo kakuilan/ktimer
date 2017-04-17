@@ -9,6 +9,7 @@ https://github.com/takama/daemon 守护进程
 https://github.com/natefinch/lumberjack  日志
 https://github.com/siddontang/ledisdb  redis替代
 https://github.com/andelf/go-curl 
+https://github.com/ddliu/go-httpclient 
 https://github.com/imroc/req 
 https://github.com/shopspring/decimal 
 https://github.com/alecthomas/kingpin 命令行解析
@@ -45,6 +46,8 @@ http://stackoverflow.com/questions/10781516/how-to-pipe-several-commands-in-go
 http://stackoverflow.com/questions/7172784/how-to-post-json-data-with-curl-from-terminal-commandline-to-test-spring-rest curl
 http://blog.csdn.net/wzx19840423/article/details/6587370 curl
 https://curl.haxx.se/libcurl/c/curl_easy_setopt.html curl
+http://stackoverflow.com/questions/2329571/c-libcurl-get-output-into-a-string
+http://stackoverflow.com/questions/19094099/how-to-dump-goroutine-stacktraces 
 ------------------------------------------
 安装git
 yum install git
@@ -132,6 +135,11 @@ task_expire_limit = 60
 task_sametimer_interval = 10
 #相同断续器的间隔限制.默认0为不允许存在多个相同断续器.
 task_sameticker_interval = 0
+#是否打开性能调试
+profile_open = 1
+#性能调试端口
+profile_port = 6060
+
 
 [web]
 #是否启用web
@@ -140,6 +148,8 @@ web.enable = 1
 web.port = 9558
 #web监听IP
 web.bind_ip = 127.0.0.1
+#web允许的IP段
+web.allow_ip = 127.,192.,10.
 #web访问密码
 web.passwd = eCvN5BxH$bJc
 
@@ -245,6 +255,7 @@ web访问参数：
 返回json:
 {
     "status" : "处理状态:true,false",
+	"code" : "401未授权,200正常返回,500服务器错误",
     "data" : "具体数据",
     "msg" : "提示信息",
 }
@@ -325,33 +336,87 @@ curl http://127.0.0.1:9510/message/index
 web-> command:http://test.com/test?page=1&kt_post={}
 保留参数kt_post:json
 
-有问题
-GetTaskDetail
-DelTaskDetail
 
 redis ERR max number of clients reached
 http://blog.csdn.net/ijibu/article/details/50151929
 
-rm -rf log/ runtime/ conf.ini
+内存分析、golang pprof 内存泄露
+pprof
+然后go tool pprof
+http://studygolang.com/articles/7069
+http://www.cppblog.com/sunicdavy/archive/2015/04/11/210308.html
+http://studygolang.com/articles/4884
+http://studygolang.com/articles/2763
+http://studygolang.com/articles/3428
+http://www.cnblogs.com/ghj1976/p/5473693.html
+http://www.cnblogs.com/zhangqingping/p/4345071.html
+http://xiaorui.cc/2016/03/20/golang%E4%BD%BF%E7%94%A8pprof%E7%9B%91%E6%8E%A7%E6%80%A7%E8%83%BD%E5%8F%8Agc%E8%B0%83%E4%BC%98/
+
+性能调试
+http://192.168.128.130:6060/debug/pprof/
+go tool pprof http://localhost:6060/debug/pprof/heap
+go tool pprof http://localhost:6060/debug/pprof/profile
+> top -10
+apt-get install graphviz
+
+
+rm -rf log/ runtime/ main conf.ini profile_file
 add -type=timer -time=5 -limit=0 -command="echo hello ktimer"
-add -type=timer -time=5 -limit=0 -command="touch log/test.txt | date >> log/test.txt"
-add -type=timer -time=5 -limit=0 -command="http://192.168.128.130:9558/index/test?page=1&tid=9&kt_post={abc=1&efg=hah&end=true}"
+add -type=timer -time=1 -limit=0 -command="date --rfc-3339=ns"
+add -type=ticker -time=3 -limit=0 -command="date --rfc-3339=ns"
+add -type=timer -time=5 -limit=0 -command="touch log/test.txt && date >> log/test.txt"
+add -type=timer -time=5 -limit=0 -command="http://127.0.0.1:9558/index/test?page=1&tid=9&kt_post="
+add -type=timer -time=2 -limit=0 -command='http://127.0.0.1:9558/index/test?page=1&tid=9&kt_post={"name":"kak","money":45.2}'
+add -type=timer -time=2 -limit=0 -command="https://api.afd56.com.cn/crontabs/index?page=1&act=test&kt_post="
 add -type=ticker -time=5 -limit=0 -command="date >> log/test.txt"
-add -type=ticker -time=2 -limit=0 -command="https://api.afd56.com.cn/crontabs/index?page=1&act=test&kt_get={}&kt_post={}"
+add -type=ticker -time=2 -limit=0 -command="https://api.afd56.com.cn/crontabs/index?page=1&act=test&kt_post="
 add -type=ticker -time=1 -limit=0 -command="https://www.baidu.com/"
 ZRANGE ktimer:tasks:second47 0 -1 WITHSCORES
 ZRANGE ktimer:tasks:second54 0 -1 WITHSCORES
 HGETALL ktimer:tasks:all
 
+go test -test.benchtime 600 -test.memprofile mem.out -test.memprofilerate 8 main.go
 
+---------------------------------------------
+rm -rf log/ runtime/ main conf.ini
 
+交叉编译
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build main.go
 
+mv go/ /usr/local/go
+设置go环境变量
+vi /etc/profile
 
+export GOROOT=/usr/local/go
+export GOBIN=$GOROOT/bin
+PATH=$PATH:$GOBIN
+export PATH
+然后让配置立即生效
+source /etc/profile
 
+git clone https://github.com/kakuilan/ktimer.git
 
+设置GOPATH
+export GOPATH=/root/ktimer
 
+go get github.com/andelf/go-curl
+go get github.com/go-redis/redis
+go get github.com/shopspring/decimal
+go get github.com/takama/daemon
+go get gopkg.in/natefinch/lumberjack.v2
+go get github.com/pkg/profile
 
+问题
+# pkg-config --cflags libcurl
+Package libcurl was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libcurl.pc'
+to the PKG_CONFIG_PATH environment variable
+No package 'libcurl' found
+pkg-config: exit status 1
+解决
+yum install curl-devel
 
+---------------------------------------------
 
 
 
