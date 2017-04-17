@@ -65,7 +65,7 @@ func TimerContainer() {
 	go func() {
 		//500毫秒的断续器
 		mt := time.Tick(time.Millisecond * 500)
-		for c := range mt {
+		for _ = range mt {
 			pidno, _ := GetServicePidNo()
 			servpidno := GetCurrentServicePid()
 			if pidno > 0 && pidno != servpidno {
@@ -74,9 +74,9 @@ func TimerContainer() {
 			}
 
 			_, now_mic := GetCurrentTime()
-			msg := fmt.Sprintf("MainTimer begining c[%v], now[%0.6f]", c, now_mic)
-			LogRunes(msg)
-			fmt.Println(msg)
+			//msg := fmt.Sprintf("MainTimer begining c[%v], now[%0.6f]", c, now_mic)
+			//LogRunes(msg)
+			//fmt.Println(msg)
 			go func(now_mic float64) {
 				_, runErr := MainTimer(now_mic)
 				if runErr != nil {
@@ -128,9 +128,9 @@ func MainTimer(now_mic float64) (int, error) {
 			zms := GetMainSecond(redZ.Score)
 			if ms != zms && GreaterOrEqual(redZ.Score, now_mic) { //未到执行时间
 				breakQue = true
-				msg := fmt.Sprintf("not run time, nowtime[%0.6f] nextime[%0.6f] item:%v", now_mic, redZ.Score, redZ)
-				LogRunes(msg)
-				fmt.Println(msg)
+				//msg := fmt.Sprintf("not run time, nowtime[%0.6f] nextime[%0.6f] item:%v", now_mic, redZ.Score, redZ)
+				//LogRunes(msg)
+				//fmt.Println(msg)
 			} else { //执行任务
 				chNum++
 				go func(zd redis.Z, now_mic float64, ch chan *TkProceResp) {
@@ -141,7 +141,7 @@ func MainTimer(now_mic float64) (int, error) {
 				}(redZ, now_mic, ch)
 			}
 
-			fmt.Printf("zstruct type:[%T] %v i[%d]\n", redZ, redZ, allNum)
+			//fmt.Printf("zstruct type:[%T] %v i[%d]\n", redZ, redZ, allNum)
 		}
 	}
 
@@ -149,7 +149,6 @@ func MainTimer(now_mic float64) (int, error) {
 	retNum := 0
 	for {
 		if retNum >= chNum {
-            close(ch)
 			break
 		}
 
@@ -168,7 +167,7 @@ func MainTimer(now_mic float64) (int, error) {
 	if allNum > 0 {
 		LogRunes(msg)
 	}
-	fmt.Println(msg)
+	//fmt.Println(msg)
 
 	return sucNum, err
 }
@@ -185,11 +184,11 @@ func RunSecondTask(zd redis.Z, now_mic float64, ch chan *TkProceResp) (bool, err
 	kd, err := GetTaskDetail(kid)
 	if err != nil {
 		delRes, delErr := DelTaskDetail(kid)
-		if delErr != nil {
+		if !delRes || delErr != nil {
 			_, _ = _delTask4Queu(kid, zd.Score)
 		}
 		LogRunes("SecondTask is not exist,deleted.kid:", kid)
-		fmt.Println("kid not exist", delRes, delErr)
+		//fmt.Println("kid not exist", delRes, delErr)
 
 		tpr.Err = err
 		ch <- tpr
@@ -229,7 +228,7 @@ func RunSecondTask(zd redis.Z, now_mic float64, ch chan *TkProceResp) (bool, err
 		_, _ = DelTaskDetail(kid)
 		msg := fmt.Sprintf("SecondTask is expired. kid[%s] nowtime[%0.6f] nextime[%0.6f] expire[%d],deleted.", kid, now_mic, kd.Run_nexttime, taskExpire)
 		LogRunes(msg)
-		fmt.Println(msg)
+		//fmt.Println(msg)
 	}
 
 	//执行日志
