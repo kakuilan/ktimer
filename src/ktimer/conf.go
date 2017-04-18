@@ -41,7 +41,7 @@ web.enable = 1
 #web端口
 web.port = 9558
 #web监听IP
-web.bind_ip = 127.0.0.1
+web.bind_ip = localhost
 #web允许的IP段
 web.allow_ip = 127.,192.,10.
 #web访问密码
