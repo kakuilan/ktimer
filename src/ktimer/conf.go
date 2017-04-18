@@ -24,8 +24,8 @@ task_pool_key = ktimer:tasks:all
 task_trun_key = ktimer:tasks:second
 #任务锁key
 task_lcok_key = ktimer:tasks:lock
-#任务过期限制.默认执行60秒内的任务,超过则抛弃;为0则不限制,全部执行
-task_expire_limit = 60
+#任务过期限制.默认执行120秒内的任务,超过则抛弃;为0则不限制,全部执行
+task_expire_limit = 120
 #相同定时器的间隔限制.默认10秒内,若有多个相同定时器,只保留最后那个.为0则不限制.
 task_sametimer_interval = 10
 #相同断续器的间隔限制.默认0为不允许存在多个相同断续器.

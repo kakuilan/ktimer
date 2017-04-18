@@ -64,7 +64,7 @@ var DenyCmd = []string{
 func TimerContainer() {
 	go func() {
 		//500毫秒的断续器
-		mt := time.Tick(time.Millisecond * 500)
+		mt := time.Tick(time.Millisecond * 1000)
 		for _ = range mt {
 			pidno, _ := GetServicePidNo()
 			servpidno := GetCurrentServicePid()
@@ -74,10 +74,10 @@ func TimerContainer() {
 			}
 
 			_, now_mic := GetCurrentTime()
-			//msg := fmt.Sprintf("MainTimer begining c[%v], now[%0.6f]", c, now_mic)
-			//LogRunes(msg)
-			//fmt.Println(msg)
 			go func(now_mic float64) {
+				msg := fmt.Sprintf("MainTimer begining: now[%0.6f]", now_mic)
+				LogRunes(msg)
+				//fmt.Println(msg)
 				_, runErr := MainTimer(now_mic)
 				if runErr != nil {
 					LogErres("MainTimer run error,", runErr)
@@ -94,6 +94,7 @@ func MainTimer(now_mic float64) (int, error) {
 	var err error
 	var breakQue bool
 	var redZ redis.Z
+	var redZArr []redis.Z
 
 	ms := GetMainSecond(now_mic)
 	cnfObj, _ := GetConfObj()
@@ -106,9 +107,6 @@ func MainTimer(now_mic float64) (int, error) {
 		return sucNum, err
 	}
 
-	//channel
-	ch := make(chan *TkProceResp, 100)
-	chNum := 0
 
 	for {
 		if breakQue {
@@ -128,27 +126,33 @@ func MainTimer(now_mic float64) (int, error) {
 			zms := GetMainSecond(redZ.Score)
 			if ms != zms && GreaterOrEqual(redZ.Score, now_mic) { //未到执行时间
 				breakQue = true
-				//msg := fmt.Sprintf("not run time, nowtime[%0.6f] nextime[%0.6f] item:%v", now_mic, redZ.Score, redZ)
-				//LogRunes(msg)
+				msg := fmt.Sprintf("not run time, nowtime[%0.6f] nextime[%0.6f] item:%v", now_mic, redZ.Score, redZ)
+				LogRunes(msg)
 				//fmt.Println(msg)
 			} else { //执行任务
-				chNum++
-				go func(zd redis.Z, now_mic float64, ch chan *TkProceResp) {
-					runRes, runErr := RunSecondTask(redZ, now_mic, ch)
-					if !runRes || runErr != nil {
-						_delTask4Queu(fmt.Sprintf("%s", redZ), redZ.Score)
-					}
-				}(redZ, now_mic, ch)
+				_ = append(redZArr, redZ)
 			}
-
-			//fmt.Printf("zstruct type:[%T] %v i[%d]\n", redZ, redZ, allNum)
 		}
+	}
+
+	//channel
+	ch := make(chan *TkProceResp, 100)
+    chNum := len(redZArr)
+	for _, redZ = range redZArr {
+		go func(zd redis.Z, now_mic float64, ch chan *TkProceResp) {
+			runRes, runErr := RunSecondTask(redZ, now_mic, ch)
+			if !runRes || runErr != nil {
+				_delTask4Queu(fmt.Sprintf("%s", redZ), redZ.Score)
+			}
+		}(redZ, now_mic, ch)
+		//fmt.Printf("zstruct type:[%T] %v i[%d]\n", redZ, redZ, allNum)
 	}
 
 	//等待结果返回
 	retNum := 0
 	for {
 		if retNum >= chNum {
+			close(ch)
 			break
 		}
 
@@ -163,12 +167,11 @@ func MainTimer(now_mic float64) (int, error) {
 		}
 	}
 
-	msg := fmt.Sprintf("MainTimer result:%0.6f, tasks total:[%d] runed:[%d]", now_mic, allNum, sucNum)
+	msg := fmt.Sprintf("MainTimer result: time:%0.6f,second:%d tasks total:[%d] runed:[%d] chan:[%d] return:[%d]", now_mic, ms, allNum, sucNum, chNum, retNum)
 	if allNum > 0 {
 		LogRunes(msg)
 	}
 	//fmt.Println(msg)
-
 	return sucNum, err
 }
 
@@ -395,7 +398,7 @@ func ReaddTimerAfterRun(kid string, kt *KtimerTask) (bool, error) {
 	}
 
 	kt.Run_num++
-    kt.Run_lasttime = kt.Run_nexttime
+	kt.Run_lasttime = kt.Run_nexttime
 	if kt.Type != "ticker" || (kt.Limit > 0 && kt.Run_num >= kt.Limit) {
 		err = errors.New("task is not ticker or number limit")
 		return res, err
