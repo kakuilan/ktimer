@@ -74,7 +74,7 @@ func TimerContainer() {
 			}
 
 			_, now_mic := GetCurrentTime()
-			go func(now_mic float64) {
+			func(now_mic float64) {
 				msg := fmt.Sprintf("MainTimer begining: now[%0.6f]", now_mic)
 				LogRunes(msg)
 				//fmt.Println(msg)
@@ -107,7 +107,6 @@ func MainTimer(now_mic float64) (int, error) {
 		return sucNum, err
 	}
 
-
 	for {
 		if breakQue {
 			break
@@ -124,21 +123,26 @@ func MainTimer(now_mic float64) (int, error) {
 			allNum++
 			redZ = zres[0]
 			zms := GetMainSecond(redZ.Score)
+            fmt.Println("redZ-data", redZ, ms, zms)
 			if ms != zms && GreaterOrEqual(redZ.Score, now_mic) { //未到执行时间
 				breakQue = true
 				msg := fmt.Sprintf("not run time, nowtime[%0.6f] nextime[%0.6f] item:%v", now_mic, redZ.Score, redZ)
 				LogRunes(msg)
-				//fmt.Println(msg)
+				fmt.Println(msg)
 			} else { //执行任务
-				_ = append(redZArr, redZ)
+                redZArr = append(redZArr, redZ)
+                fmt.Println("append", redZArr)
 			}
 		}
 	}
 
 	//channel
-	ch := make(chan *TkProceResp, 100)
+	ch := make(chan *TkProceResp)
     chNum := len(redZArr)
-	for _, redZ = range redZArr {
+    fmt.Println("testlkk", allNum, chNum, redZArr)
+
+    for _, redZ = range redZArr {
+        fmt.Println("add redZArr", redZ)
 		go func(zd redis.Z, now_mic float64, ch chan *TkProceResp) {
 			runRes, runErr := RunSecondTask(redZ, now_mic, ch)
 			if !runRes || runErr != nil {
@@ -183,6 +187,7 @@ func RunSecondTask(zd redis.Z, now_mic float64, ch chan *TkProceResp) (bool, err
 
 	kid := fmt.Sprintf("%v", zd.Member)
 	tpr.Kid = kid
+    LogRunes("SecondTask begining:", zd, now_mic)
 
 	kd, err := GetTaskDetail(kid)
 	if err != nil {
