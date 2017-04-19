@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+    "os"
 )
 
 const (
@@ -91,6 +92,7 @@ func TimerContainer() {
 //主体定时器
 func MainTimer(now_mic float64) (int, error) {
 	var allNum, sucNum int
+    var startPos,endPos int64
 	var err error
 	var breakQue bool
 	var redZ redis.Z
@@ -111,16 +113,20 @@ func MainTimer(now_mic float64) (int, error) {
 		if breakQue {
 			break
 		}
-		zres, err := client.ZRangeWithScores(key, 0, 0).Result()
+		zres, err := client.ZRangeWithScores(key, startPos, endPos).Result()
 		zlen := len(zres)
 		if err != nil || zlen == 0 {
+            fmt.Println("queue is to end")
 			break
 		} else {
 			if redZ == zres[0] {
+                fmt.Println("redZ=zres[0]", redZ, zres, startPos, endPos)
 				break
 			}
 
 			allNum++
+            startPos++
+            endPos++
 			redZ = zres[0]
 			zms := GetMainSecond(redZ.Score)
             fmt.Println("redZ-data", redZ, ms, zms)
@@ -129,6 +135,7 @@ func MainTimer(now_mic float64) (int, error) {
 				msg := fmt.Sprintf("not run time, nowtime[%0.6f] nextime[%0.6f] item:%v", now_mic, redZ.Score, redZ)
 				LogRunes(msg)
 				fmt.Println(msg)
+                break
 			} else { //执行任务
                 redZArr = append(redZArr, redZ)
                 fmt.Println("append", redZArr)
@@ -140,6 +147,9 @@ func MainTimer(now_mic float64) (int, error) {
 	ch := make(chan *TkProceResp)
     chNum := len(redZArr)
     fmt.Println("testlkk", allNum, chNum, redZArr)
+    if chNum>0 {
+        os.Exit(0)
+    }
 
     for _, redZ = range redZArr {
         fmt.Println("add redZArr", redZ)
