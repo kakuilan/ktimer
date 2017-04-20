@@ -144,15 +144,13 @@ func MainTimer(now_mic float64) (int, error) {
 	//channel
 	ch := make(chan *TkProceResp, 100)
     chNum := len(redZArr)
-    //fmt.Println("total channel", allNum, chNum, redZArr)
-    if chNum>0 {
-        //os.Exit(0)
-    }
+    fmt.Println("total channel", allNum, chNum, redZArr)
 
     for _, redZ = range redZArr {
         //fmt.Println("add redZArr", redZ)
+        //LogRunes("paifa channel", redZ)
 		go func(zd redis.Z, now_mic float64, ch chan *TkProceResp) {
-			runRes, runErr := RunSecondTask(redZ, now_mic, ch)
+			runRes, runErr := RunSecondTask(zd, now_mic, ch)
 			if !runRes || runErr != nil {
 				_delTask4Queu(fmt.Sprintf("%s", redZ), redZ.Score)
 			}
@@ -178,6 +176,10 @@ func MainTimer(now_mic float64) (int, error) {
 			time.Sleep(100 * time.Microsecond)
 		}
 	}
+
+    if chNum>0 {
+        //os.Exit(0)
+    }
 
 	msg := fmt.Sprintf("MainTimer result: time:%0.6f,second:%d tasks total:[%d] runed:[%d] chan:[%d] return:[%d]", now_mic, ms, allNum, sucNum, chNum, retNum)
 	if allNum > 0 {
@@ -239,7 +241,7 @@ func RunSecondTask(zd redis.Z, now_mic float64, ch chan *TkProceResp) (bool, err
 	if err != nil {
 		taskExpire, err = 60, nil
 	}
-	if GreaterOrEqual(now_mic-float64(taskExpire), kd.Run_nexttime) {
+	if kd.Type=="timer" && GreaterOrEqual(now_mic-float64(taskExpire), kd.Run_nexttime) {
 		_, _ = UnlockTaskDoing(kid)
 		_, _ = DelTaskDetail(kid)
 		msg := fmt.Sprintf("SecondTask is expired. kid[%s] nowtime[%0.6f] nextime[%0.6f] expire[%d],deleted.", kid, now_mic, kd.Run_nexttime, taskExpire)
