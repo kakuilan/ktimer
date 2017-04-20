@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-    "os"
+//    "os"
 )
 
 const (
@@ -75,7 +75,7 @@ func TimerContainer() {
 			}
 
 			_, now_mic := GetCurrentTime()
-			func(now_mic float64) {
+			go func(now_mic float64) {
 				msg := fmt.Sprintf("MainTimer begining: now[%0.6f]", now_mic)
 				LogRunes(msg)
 				//fmt.Println(msg)
@@ -91,8 +91,8 @@ func TimerContainer() {
 
 //主体定时器
 func MainTimer(now_mic float64) (int, error) {
-	var allNum, sucNum int
-    var startPos,endPos int64
+	var sucNum int
+    var allNum int64
 	var err error
 	var breakQue bool
 	var redZ redis.Z
@@ -113,20 +113,18 @@ func MainTimer(now_mic float64) (int, error) {
 		if breakQue {
 			break
 		}
-		zres, err := client.ZRangeWithScores(key, startPos, endPos).Result()
+		zres, err := client.ZRangeWithScores(key, allNum, allNum).Result()
 		zlen := len(zres)
 		if err != nil || zlen == 0 {
-            fmt.Println("queue is to end")
+            //fmt.Println("queue is to end")
 			break
 		} else {
 			if redZ == zres[0] {
-                fmt.Println("redZ=zres[0]", redZ, zres, startPos, endPos)
+                //fmt.Println("redZ=zres[0]", redZ, zres, allNum)
 				break
 			}
 
 			allNum++
-            startPos++
-            endPos++
 			redZ = zres[0]
 			zms := GetMainSecond(redZ.Score)
             fmt.Println("redZ-data", redZ, ms, zms)
@@ -134,25 +132,25 @@ func MainTimer(now_mic float64) (int, error) {
 				breakQue = true
 				msg := fmt.Sprintf("not run time, nowtime[%0.6f] nextime[%0.6f] item:%v", now_mic, redZ.Score, redZ)
 				LogRunes(msg)
-				fmt.Println(msg)
+				//fmt.Println(msg)
                 break
 			} else { //执行任务
                 redZArr = append(redZArr, redZ)
-                fmt.Println("append", redZArr)
+                //fmt.Println("append", redZArr)
 			}
 		}
 	}
 
 	//channel
-	ch := make(chan *TkProceResp)
+	ch := make(chan *TkProceResp, 100)
     chNum := len(redZArr)
-    fmt.Println("testlkk", allNum, chNum, redZArr)
+    //fmt.Println("total channel", allNum, chNum, redZArr)
     if chNum>0 {
-        os.Exit(0)
+        //os.Exit(0)
     }
 
     for _, redZ = range redZArr {
-        fmt.Println("add redZArr", redZ)
+        //fmt.Println("add redZArr", redZ)
 		go func(zd redis.Z, now_mic float64, ch chan *TkProceResp) {
 			runRes, runErr := RunSecondTask(redZ, now_mic, ch)
 			if !runRes || runErr != nil {
