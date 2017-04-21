@@ -130,7 +130,7 @@ task_trun_key = ktimer:tasks:second
 #任务锁key
 task_lcok_key = ktimer:tasks:lock
 #任务过期限制.默认执行60秒内的任务,超过则抛弃;为0则不限制,全部执行
-task_expire_limit = 60
+task_expire_limit = 120
 #相同定时器的间隔限制.默认10秒内,若有多个相同定时器,只保留最后那个.为0则不限制.
 task_sametimer_interval = 10
 #相同断续器的间隔限制.默认0为不允许存在多个相同断续器.
@@ -154,7 +154,7 @@ web.allow_ip = 127.,192.,10.
 web.passwd = eCvN5BxH$bJc
 
 [redis]
-redis.host = 127.0.0.1
+redis.host = localhost
 redis.port = 6379
 redis.db = 1
 redis.passwd = 
@@ -359,8 +359,16 @@ go tool pprof http://localhost:6060/debug/pprof/profile
 > top -10
 apt-get install graphviz
 
+redis connet has error: dial tcp 127.0.0.1:6379: getsockopt: connection refused goroutine
+http://stackoverflow.com/questions/33820025/connecting-golang-and-redis-through-docker
+http://www.oschina.net/question/579073_113004
 
-rm -rf log/ runtime/ main conf.ini profile_file
+守护进程
+It was solved by removing the following two lines in /etc/systemd/system/myservice.service:
+Requires=dummy.service
+After=dummy.service
+
+rm -rf log/ runtime/ main conf.ini 
 add -type=timer -time=5 -limit=0 -command="echo hello ktimer"
 add -type=timer -time=1 -limit=0 -command="date --rfc-3339=ns"
 add -type=ticker -time=3 -limit=0 -command="date --rfc-3339=ns"
@@ -371,6 +379,10 @@ add -type=timer -time=2 -limit=0 -command="https://api.afd56.com.cn/crontabs/ind
 add -type=ticker -time=5 -limit=0 -command="date >> log/test.txt"
 add -type=ticker -time=2 -limit=0 -command="https://api.afd56.com.cn/crontabs/index?page=1&act=test&kt_post="
 add -type=ticker -time=1 -limit=0 -command="https://www.baidu.com/"
+add -type=ticker -time=1 -limit=0 -command="date 001"
+add -type=ticker -time=2 -limit=0 -command="date 002"
+add -type=ticker -time=3 -limit=0 -command="date 003"
+add -type=ticker -time=4 -limit=0 -command="date 004"
 ZRANGE ktimer:tasks:second47 0 -1 WITHSCORES
 ZRANGE ktimer:tasks:second54 0 -1 WITHSCORES
 HGETALL ktimer:tasks:all
@@ -416,6 +428,30 @@ pkg-config: exit status 1
 解决
 yum install curl-devel
 
+配置防火墙
+删除后新增
+iptables -L INPUT --line-numbers
+iptables -D INPUT 9
+iptables -A INPUT -p tcp --dport 9558 -j ACCEPT
+iptables -A INPUT -p tcp --dport 6060 -j ACCEPT
+保存
+service iptables save
+systemctl restart iptables.service
+
+centos7.2 install redis
+wget -r --no-parent -A 'epel-release-*.rpm' http://dl.fedoraproject.org/pub/epel/7/x86_64/e/
+rpm -Uvh dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-*.rpm
+yum install redis
+systemctl start redis.service
+systemctl status redis.service
+redis-cli ping
+systemctl restart redis.service
+systemctl enable redis.service
+systemctl disable redis.service
+
+centos7 
+ktimer install
+ln -sf ../ktimer /usr/bin/ktimer
 ---------------------------------------------
 
 
