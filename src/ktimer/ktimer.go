@@ -26,7 +26,7 @@ const (
 	PUBDATE     = "2017.4"
 	AUTHOR      = "kakuilan@163.com"
 	LOCKTIME    = 2 * time.Second
-	TASKMAXTIME = 60
+	TASKMAXTIME = 30
 )
 
 //定时器参数数据结构
@@ -920,9 +920,11 @@ func RunUrlTask(tsk string, needreturn bool) (string, error) {
 	defer easy.Cleanup()
 
 	easy.Setopt(curl.OPT_VERBOSE, 1)
+    easy.Setopt(curl.OPT_FORBID_REUSE, 1)
 	easy.Setopt(curl.OPT_URL, tUrl)
 	easy.Setopt(curl.OPT_USERAGENT, SERNAME)
 	easy.Setopt(curl.OPT_TIMEOUT, TASKMAXTIME)
+	easy.Setopt(curl.OPT_TCP_KEEPALIVE, TASKMAXTIME)
 	easy.Setopt(curl.OPT_PORT, tPor)
 	if tPos != "" {
 		easy.Setopt(curl.OPT_POST, 1)
