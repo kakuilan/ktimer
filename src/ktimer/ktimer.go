@@ -26,7 +26,7 @@ const (
 	PUBDATE     = "2017.4"
 	AUTHOR      = "kakuilan@163.com"
 	LOCKTIME    = 2 * time.Second
-	TASKMAXTIME = 30
+	TASKMAXTIME = 5
 )
 
 //定时器参数数据结构
@@ -247,6 +247,9 @@ func RunSecondTask(zd redis.Z, now_mic float64, ch chan *TkProceResp) (bool, err
 		msg := fmt.Sprintf("SecondTask is expired. kid[%s] nowtime[%0.6f] nextime[%0.6f] expire[%d],deleted.", kid, now_mic, kd.Run_nexttime, taskExpire)
 		LogRunes(msg)
 		//fmt.Println(msg)
+
+        ch <- tpr
+        return res, err
 	}
 
 	//执行日志
@@ -919,13 +922,24 @@ func RunUrlTask(tsk string, needreturn bool) (string, error) {
 	easy := curl.EasyInit()
 	defer easy.Cleanup()
 
-	easy.Setopt(curl.OPT_VERBOSE, 1)
+    //调试,在屏幕打印请求连接过程和返回http数据
+	easy.Setopt(curl.OPT_VERBOSE, 0)
+    //在完成交互以后强迫断开连接,不能重用
     easy.Setopt(curl.OPT_FORBID_REUSE, 1)
+	//支持毫秒级别超时设置
+    easy.Setopt(curl.OPT_NOSIGNAL, 1)
 	easy.Setopt(curl.OPT_URL, tUrl)
 	easy.Setopt(curl.OPT_USERAGENT, SERNAME)
-	easy.Setopt(curl.OPT_NOSIGNAL, 1)
+    //接收数据时超时设置
 	easy.Setopt(curl.OPT_TIMEOUT, TASKMAXTIME)
-	easy.Setopt(curl.OPT_TCP_KEEPALIVE, TASKMAXTIME)
+    //连接超时
+	easy.Setopt(curl.OPT_CONNECTTIMEOUT, TASKMAXTIME)
+    //本次连接保持多长时间
+	easy.Setopt(curl.OPT_TCP_KEEPALIVE, 5)
+    //等待连接空闲前发送实时探测
+	easy.Setopt(curl.OPT_TCP_KEEPIDLE, 120)
+    //两次KeepAlive探测间的时间间隔
+	easy.Setopt(curl.OPT_TCP_KEEPINTVL, 60)
 	easy.Setopt(curl.OPT_PORT, tPor)
 	if tPos != "" {
 		easy.Setopt(curl.OPT_POST, 1)
