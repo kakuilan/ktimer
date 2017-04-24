@@ -26,7 +26,7 @@ const (
 	PUBDATE     = "2017.4"
 	AUTHOR      = "kakuilan@163.com"
 	LOCKTIME    = 2 * time.Second
-	TASKMAXTIME = 5
+	TASKMAXTIME = 30
 )
 
 //定时器参数数据结构
@@ -935,7 +935,7 @@ func RunUrlTask(tsk string, needreturn bool) (string, error) {
     //连接超时
 	easy.Setopt(curl.OPT_CONNECTTIMEOUT, TASKMAXTIME)
     //本次连接保持多长时间
-	easy.Setopt(curl.OPT_TCP_KEEPALIVE, 5)
+	easy.Setopt(curl.OPT_TCP_KEEPALIVE, TASKMAXTIME)
     //等待连接空闲前发送实时探测
 	easy.Setopt(curl.OPT_TCP_KEEPIDLE, 120)
     //两次KeepAlive探测间的时间间隔
