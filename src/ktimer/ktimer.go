@@ -285,9 +285,9 @@ func RunDetailTask(kid string, command string) (bool, error) {
 	if IsUrl(command) { //执行URL任务
         //把kid带进去
         if strings.Index(command, "?") >0 {
-            command = command+"&kid="+kid
+            command = command+"&kid="+kid+"&timer_id="+kid
         }else{
-            command = command+"?kid="+kid 
+            command = command+"?kid="+kid+"&timer_id="+kid 
         }
 
         out, err := RunUrlTask(command, true)
