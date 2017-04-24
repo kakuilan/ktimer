@@ -283,7 +283,14 @@ func RunDetailTask(kid string, command string) (bool, error) {
 
 	command = strings.TrimSpace(command)
 	if IsUrl(command) { //执行URL任务
-		out, err := RunUrlTask(command, true)
+        //把kid带进去
+        if strings.Index(command, "?") >0 {
+            command = command+"&kid="+kid
+        }else{
+            command = command+"?kid="+kid 
+        }
+
+        out, err := RunUrlTask(command, true)
 		if err == nil {
 			res = true
 		}
