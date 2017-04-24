@@ -923,6 +923,7 @@ func RunUrlTask(tsk string, needreturn bool) (string, error) {
     easy.Setopt(curl.OPT_FORBID_REUSE, 1)
 	easy.Setopt(curl.OPT_URL, tUrl)
 	easy.Setopt(curl.OPT_USERAGENT, SERNAME)
+	easy.Setopt(curl.OPT_NOSIGNAL, 1)
 	easy.Setopt(curl.OPT_TIMEOUT, TASKMAXTIME)
 	easy.Setopt(curl.OPT_TCP_KEEPALIVE, TASKMAXTIME)
 	easy.Setopt(curl.OPT_PORT, tPor)
