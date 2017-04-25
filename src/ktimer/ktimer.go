@@ -81,7 +81,7 @@ func TimerContainer() {
 				//fmt.Println(msg)
 				_, runErr := MainTimer(now_mic)
 				if runErr != nil {
-					LogErres("MainTimer run error,", runErr)
+					LogRunes("MainTimer run error,", runErr)
 				}
 			}(now_mic)
 
@@ -105,7 +105,7 @@ func MainTimer(now_mic float64) (int, error) {
 
 	client, err := GetRedisClient()
 	if err != nil {
-		LogErres("MainTimer redis error", err)
+		LogRunes("MainTimer redis error", err)
 		return sucNum, err
 	}
 
@@ -841,7 +841,7 @@ func DelTaskDetail(kid string) (bool, error) {
 
 	str, err := client.HGet(key, kid).Result()
 	if err != nil {
-		LogErres("HGet kid err:", kid, err)
+		LogRunes("HGet kid err:", kid, err)
 		err = errors.New("kid does not exist")
 		return res, err
 	}
