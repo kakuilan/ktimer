@@ -202,7 +202,7 @@ func ServiceExit(msg string, err error) {
 
 //服务错误处理
 func ServiceError(msg string,err error) {
-    stacks := _getRunStack(true)
+    stacks := _getRunStack(false)
     LogErres(msg, err, string(stacks))
 }
 
@@ -250,7 +250,7 @@ func ServiceInit() {
 	//检查redis
 	chk, err = CheckRedis()
 	if err != nil {
-		ServiceExit("redis connet has error:", err)
+		ServiceError("redis connet has error:", err)
 	}
 
 	//检查日志目录
