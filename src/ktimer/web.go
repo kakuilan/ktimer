@@ -72,18 +72,18 @@ func WebContainer() {
 	fmt.Println("start web server...")
 	CnfObj, err = GetConfObj()
 	if err != nil {
-		ServiceError("web server get conf fail.", err)
+		ServiceExit("web server get conf fail.", err)
 	}
 
 	open, err := CnfObj.Int("web::web.enable")
 	if err != nil {
-		ServiceError("web server get conf fail.", err)
+		ServiceExit("web server get conf fail.", err)
 	} else if open < 1 {
 		LogService("web server is setting close.", open)
 	} else {
 		port, err := CnfObj.Int("web::web.port")
 		if err != nil {
-			ServiceError("web server get conf fail.", err)
+			ServiceExit("web server get conf fail.", err)
 		}
 		bind_ip := CnfObj.String("web::web.bind_ip")
 		passwd := CnfObj.String("web::web.passwd")
@@ -104,7 +104,7 @@ func WebContainer() {
 			//启动http服务
 			LogWebes("web server starting...")
 			if err := srv.ListenAndServe(); err != nil {
-				ServiceError("web server start listen fail.", err)
+				ServiceExit("web server start listen fail.", err)
 			}
 		}()
 

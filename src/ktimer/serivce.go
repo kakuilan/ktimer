@@ -187,8 +187,8 @@ func CheckPidFile() (string, error) {
 	return pidfile, err
 }
 
-//服务错误处理
-func ServiceError(msg string, err error) {
+//服务退出处理
+func ServiceExit(msg string, err error) {
 	stacks := _getRunStack(true)
 	LogErres(msg, err, string(stacks))
 	if err != nil {
@@ -198,6 +198,12 @@ func ServiceError(msg string, err error) {
 		fmt.Println(msg)
 		os.Exit(0)
 	}
+}
+
+//服务错误处理
+func ServiceError(msg string,err error) {
+    stacks := _getRunStack(true)
+    LogErres(msg, err, string(stacks))
 }
 
 //服务异常处理
@@ -237,32 +243,32 @@ func ServiceInit() {
 		if err != nil {
 			conf := GetConfFilePath()
 			err = errors.New("conf file does not exist,and create failed:" + conf)
-			ServiceError("check conf has error.", err)
+			ServiceExit("check conf has error.", err)
 		}
 	}
 
 	//检查redis
 	chk, err = CheckRedis()
 	if err != nil {
-		ServiceError("redis connet has error:", err)
+		ServiceExit("redis connet has error:", err)
 	}
 
 	//检查日志目录
 	_, err = CheckLogdir()
 	if err != nil {
-		ServiceError("check log`s dir has error:", err)
+		ServiceExit("check log`s dir has error:", err)
 	}
 
 	//检查运行时目录
 	_, err = CheckRuntimedir()
 	if err != nil {
-		ServiceError("check runtime dir has error:", err)
+		ServiceExit("check runtime dir has error:", err)
 	}
 
 	//检查pid
 	pidf, err := CheckPidFile()
 	if err != nil {
-		ServiceError("check pid has error:"+pidf, err)
+		ServiceExit("check pid has error:"+pidf, err)
 	}
 
 	//设置异常处理
@@ -276,7 +282,7 @@ func GetDaemon() (*KTService, error) {
 	var dependencies = []string{"ktimer.service"}
 	srv, err := daemon.New(SERNAME, SERDESC, dependencies...)
 	if err != nil {
-		ServiceError("get daemon err:", err)
+		ServiceExit("get daemon err:", err)
 	}
 	service := &KTService{srv}
 	return service, err
@@ -288,7 +294,7 @@ func ServiceInstall() {
 	service, _ := GetDaemon()
 	status, err := service.Install()
 	if err != nil {
-		ServiceError("service install fail.", err)
+		ServiceExit("service install fail.", err)
 	}
 	fmt.Println(status)
 	LogService("service install success.")
@@ -300,7 +306,7 @@ func ServiceRemove() {
 	service, _ := GetDaemon()
 	status, err := service.Remove()
 	if err != nil {
-		ServiceError("service remove fail.", err)
+		ServiceExit("service remove fail.", err)
 	}
 	fmt.Println(status)
 	LogService("service remove success.")
@@ -325,7 +331,7 @@ func ServiceStart() {
 	service, _ := GetDaemon()
 	status, err := service.Start()
 	if err != nil {
-		ServiceError("service start fail.", err)
+		ServiceExit("service start fail.", err)
 	}
 
 	//保存当前运行的配置
@@ -359,10 +365,10 @@ func ServiceStop() {
 		if err != nil && serPidno > 0 {
 			serProcess, err := os.FindProcess(serPidno)
 			if err != nil {
-				ServiceError("service stop fail.", err)
+				ServiceExit("service stop fail.", err)
 			}
 			if err = serProcess.Kill(); err != nil {
-				ServiceError("service process kill fail.", err)
+				ServiceExit("service process kill fail.", err)
 			}
 			status = "service stop success."
 		}
@@ -391,7 +397,7 @@ func ServiceStatus() {
 	service, _ := GetDaemon()
 	status, err := service.Status()
 	if err != nil {
-		ServiceError("service status fail.", err)
+		ServiceExit("service status fail.", err)
 	}
 	fmt.Println(status)
 }
@@ -426,7 +432,7 @@ func ServiceMain() {
 	ServPidno, err = PidCreate(pidfile)
 	if err != nil {
 		msg = fmt.Sprintf("main service create pid fail:[%s]\n", pidfile)
-		ServiceError(msg, nil)
+		ServiceExit(msg, nil)
 	}
 	SetCurrentServicePid(ServPidno)
 
