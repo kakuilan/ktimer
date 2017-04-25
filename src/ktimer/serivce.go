@@ -210,7 +210,7 @@ func ServiceError(msg string,err error) {
 func ServiceException() {
 	if err := recover(); err != nil {
 		stacks := _getRunStack(true)
-		LogErres("panic err:", err, string(stacks))
+		LogErres("catch panic err:", err, string(stacks))
 		fmt.Println(err, string(stacks))
 		//os.Exit(1)
 	}
@@ -383,9 +383,6 @@ func ServiceStop() {
 		}
 
 	}
-
-	//停止性能监控
-	//pprof.StopCPUProfile()
 
 	fmt.Println(status)
 	LogService("service stop success.")

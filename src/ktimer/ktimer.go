@@ -117,6 +117,7 @@ func MainTimer(now_mic float64) (int, error) {
 		zlen := len(zres)
 		if err != nil || zlen == 0 {
             //fmt.Println("queue is to end")
+            LogRunes("get queue has err:", err)
 			break
 		} else {
 			if redZ == zres[0] {
@@ -161,7 +162,7 @@ func MainTimer(now_mic float64) (int, error) {
 	//等待结果返回
 	retNum := 0
 	for {
-		if retNum >= chNum {
+		if chNum==0 || retNum >= chNum {
 			close(ch)
 			break
 		}

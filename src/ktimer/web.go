@@ -102,7 +102,7 @@ func WebContainer() {
 
 		go func() {
 			//启动http服务
-			LogWebes("web server starting...")
+			LogService("web server starting...")
 			if err := srv.ListenAndServe(); err != nil {
 				ServiceExit("web server start listen fail.", err)
 			}
@@ -113,11 +113,11 @@ func WebContainer() {
 		signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM)
 		<-stopChan
 		msg = "shutting down web server..."
-		LogWebes(msg)
+		LogService(msg)
 		ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
 		srv.Shutdown(ctx)
 		msg = "web server gracefully stopped."
-		LogWebes(msg)
+		LogService(msg)
 	}
 
 	//os.Exit(0)
