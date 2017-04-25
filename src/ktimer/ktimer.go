@@ -115,8 +115,10 @@ func MainTimer(now_mic float64) (int, error) {
 		}
 		zres, err := client.ZRangeWithScores(key, allNum, allNum).Result()
 		zlen := len(zres)
-		if err != nil || zlen == 0 {
+        if zlen ==0 {
             //fmt.Println("queue is to end")
+            break
+        }else if err != nil {
             LogRunes("get queue has err:", err)
 			break
 		} else {

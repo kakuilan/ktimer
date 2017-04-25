@@ -11,7 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"syscall"
+	//"syscall"
 	"time"
 )
 
@@ -104,20 +104,22 @@ func WebContainer() {
 			//启动http服务
 			LogService("web server starting...")
 			if err := srv.ListenAndServe(); err != nil {
-				ServiceExit("web server start listen fail.", err)
+				ServiceError("web server start listen fail.", err)
 			}
 		}()
 
 		//监听系统信号
 		stopChan := make(chan os.Signal)
-		signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM)
-		<-stopChan
+		signal.Notify(stopChan)
+        sig := <-stopChan
 		msg = "shutting down web server..."
 		LogService(msg)
 		ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
 		srv.Shutdown(ctx)
 		msg = "web server gracefully stopped."
 		LogService(msg)
+        LogErres("Signal received:", sig)
+        ServiceError(msg, nil)
 	}
 
 	//os.Exit(0)
