@@ -130,8 +130,8 @@ func MainTimer(now_mic float64) (int, error) {
 			allNum++
 			redZ = zres[0]
 			zms := GetMainSecond(redZ.Score)
-            fmt.Println("redZ-data", redZ, ms, zms)
-			if ms != zms && GreaterOrEqual(redZ.Score, now_mic) { //未到执行时间
+            //fmt.Println("redZ-data", redZ, ms, zms)
+			if (ms != zms && GreaterOrEqual(redZ.Score, now_mic)) || ((redZ.Score-now_mic)>1) { //未到执行时间
 				breakQue = true
 				msg := fmt.Sprintf("not run time, nowtime[%0.6f] nextime[%0.6f] item:%v", now_mic, redZ.Score, redZ)
 				LogRunes(msg)
@@ -290,7 +290,7 @@ func RunDetailTask(kid string, command string) (bool, error) {
         if strings.Index(command, "?") >0 {
             command = command+"&kid="+kid+"&timer_id="+kid
         }else{
-            command = command+"?kid="+kid+"&timer_id="+kid 
+            command = command+"?kid="+kid+"&timer_id="+kid
         }
 
         out, err := RunUrlTask(command, true)
