@@ -131,11 +131,12 @@ func MainTimer(now_mic float64) (int, error) {
 			redZ = zres[0]
 			zms := GetMainSecond(redZ.Score)
             //fmt.Println("redZ-data", redZ, ms, zms)
-			if ((redZ.Score-now_mic)>1) || (ms != zms && GreaterOrEqual(redZ.Score, now_mic)) { //未到执行时间
+            diffTime := int(redZ.Score-now_mic)
+			//LogRunes("difftime", redZ.Score, now_mic, diffTime)
+            if (diffTime>=1) || (ms != zms && GreaterOrEqual(redZ.Score, now_mic)) { //未到执行时间
 				breakQue = true
 				msg := fmt.Sprintf("not run time, nowtime[%0.6f] nextime[%0.6f] item:%v", now_mic, redZ.Score, redZ)
 				LogRunes(msg)
-				//fmt.Println(msg)
                 break
 			} else { //执行任务
                 redZArr = append(redZArr, redZ)
