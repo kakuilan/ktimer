@@ -131,7 +131,7 @@ func MainTimer(now_mic float64) (int, error) {
 			redZ = zres[0]
 			zms := GetMainSecond(redZ.Score)
             //fmt.Println("redZ-data", redZ, ms, zms)
-			if (ms != zms && GreaterOrEqual(redZ.Score, now_mic)) || ((redZ.Score-now_mic)>1) { //未到执行时间
+			if ((redZ.Score-now_mic)>1) || (ms != zms && GreaterOrEqual(redZ.Score, now_mic)) { //未到执行时间
 				breakQue = true
 				msg := fmt.Sprintf("not run time, nowtime[%0.6f] nextime[%0.6f] item:%v", now_mic, redZ.Score, redZ)
 				LogRunes(msg)
