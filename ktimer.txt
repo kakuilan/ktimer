@@ -162,9 +162,9 @@ redis.passwd =
 [log]
 log.dir = log
 #日志最大尺寸M
-log.maxsize = 10
+log.maxsize = 20
 #日志最多备份
-log.maxbackup = 5
+log.maxbackup = 10
 #日志保留天数
 log.maxage = 30
 #服务日志
@@ -359,6 +359,11 @@ go tool pprof http://localhost:6060/debug/pprof/profile
 > top -10
 apt-get install graphviz
 
+netstat -nap|grep 9558|wc -l
+golang TIME_WAIT 过多
+http://www.cnblogs.com/yjf512/p/5327886.html
+http://www.cnblogs.com/jingzhishen/p/3873775.html
+
 redis connet has error: dial tcp 127.0.0.1:6379: getsockopt: connection refused goroutine
 http://stackoverflow.com/questions/33820025/connecting-golang-and-redis-through-docker
 http://www.oschina.net/question/579073_113004
@@ -418,6 +423,9 @@ go get github.com/takama/daemon
 go get gopkg.in/natefinch/lumberjack.v2
 go get github.com/pkg/profile
 
+打包
+tar -zcf ktimer.tar.gz ./ktimer
+
 问题
 # pkg-config --cflags libcurl
 Package libcurl was not found in the pkg-config search path.
@@ -432,6 +440,7 @@ yum install curl-devel
 删除后新增
 iptables -L INPUT --line-numbers
 iptables -D INPUT 9
+iptables -A INPUT -p tcp --dport 6379 -j ACCEPT
 iptables -A INPUT -p tcp --dport 9558 -j ACCEPT
 iptables -A INPUT -p tcp --dport 6060 -j ACCEPT
 保存
@@ -451,11 +460,26 @@ systemctl disable redis.service
 
 centos7 
 ktimer install
-ln -sf ../ktimer /usr/bin/ktimer
+ln -sf /user/local/ktimer /usr/bin/ktimer
+
+查看运行了多久
+ps -aux|grep ktimer
+ps -eo pid,lstart,etime | grep 5176
+
+ktimer/ktimer stop
+rm -rf ktimer
+tar -zxvf ktimer.tar.gz
+ktimer/ktimer start
 ---------------------------------------------
 
-
-
+./main add -type=ticker -time=1 -limit=0 -command="http://127.0.0.1:9558/index/test?page=1"
+./main add -type=ticker -time=1 -limit=0 -command="http://127.0.0.1:9558/index/test?page=2"
+./main add -type=ticker -time=1 -limit=0 -command="http://127.0.0.1:9558/index/test?page=3"
+./main add -type=ticker -time=2 -limit=0 -command="http://127.0.0.1:9558/index/test?page=4"
+./main add -type=ticker -time=2 -limit=0 -command="http://127.0.0.1:9558/index/test?page=5"
+./main add -type=ticker -time=3 -limit=0 -command="http://127.0.0.1:9558/index/test?page=6"
+./main add -type=ticker -time=5 -limit=0 -command="http://127.0.0.1:9558/index/test?page=7"
+./main add -type=timer -time=142609 -limit=0 -command="http://127.0.0.1:9558/index/test?page=8"
 
 
 
